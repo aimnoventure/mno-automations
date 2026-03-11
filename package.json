@@ -1,0 +1,22 @@
+{
+  "name": "mno-automations",
+  "version": "1.0.0",
+  "description": "Multi-brand automation server for Monday.com workflows",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "axios": "^1.7.2",
+    "openai": "^4.52.0",
+    "@anthropic-ai/sdk": "^0.27.0",
+    "@google/generative-ai": "^0.17.1",
+    "@supabase/supabase-js": "^2.44.4",
+    "pg": "^8.12.0",
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3"
+  }
+}
