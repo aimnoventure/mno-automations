@@ -12,7 +12,6 @@ export default {
 
   monday: {
     apiKey: process.env.MONDAY_API_KEY_ACHORA,
-    webhookSecret: process.env.MONDAY_WEBHOOK_SECRET_ACHORA,
     boardId: process.env.MONDAY_BOARD_ID_ACHORA, // "5025223094"
 
     columns: {
