@@ -179,9 +179,9 @@ Return ONLY the valid JSON object with no additional text, explanations, or comm
 
   cms: {
     type: "wordpress",
-    url: process.env.WP_URL_MAPLE,           // e.g. https://maple.com.au (no trailing slash)
-    username: process.env.WP_USERNAME_MAPLE,
-    appPassword: process.env.WP_APP_PASSWORD_MAPLE,
+    url: process.env.WP_URL_ACHORA,           // e.g. https://maple.com.au (no trailing slash)
+    username: process.env.WP_USERNAME_ACHORA,
+    appPassword: process.env.WP_APP_PASSWORD_ACHORA,
   },
 
   rag: {
