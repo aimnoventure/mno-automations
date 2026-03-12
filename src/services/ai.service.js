@@ -189,9 +189,12 @@ async function cleanJsonWithGpt(rawOutput) {
  */
 function parseAiResponse(rawString) {
   try {
-    const start = rawString.indexOf('{');
-    const end = rawString.lastIndexOf('}');
-    const cleaned = start !== -1 && end !== -1 ? rawString.slice(start, end + 1) : rawString.trim();
+    // Strip leading ```json or ``` fence and trailing ``` fence
+    let s = rawString.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+    // Then slice from first { to last } to drop any remaining preamble
+    const start = s.indexOf('{');
+    const end = s.lastIndexOf('}');
+    const cleaned = start !== -1 && end !== -1 ? s.slice(start, end + 1) : s;
     return JSON.parse(cleaned);
   } catch (err) {
     throw new Error(
