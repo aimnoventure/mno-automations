@@ -1,4 +1,5 @@
 import achora from "./achora.config.js";
+import maple from "./maple.config.js";
 
 /**
  * Central registry of all brand configs, keyed by brand ID.
@@ -9,6 +10,7 @@ import achora from "./achora.config.js";
  */
 const brands = {
   [achora.id]: achora,
+  [maple.id]: maple,
 };
 
 /**
