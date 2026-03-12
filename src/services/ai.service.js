@@ -2,9 +2,8 @@ import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
-import pg from "pg";
-
-const { Pool } = pg;
+// import pg from "pg";
+// const { Pool } = pg;
 
 // ── RAG helpers ────────────────────────────────────────────────────────────────
 
@@ -40,42 +39,29 @@ async function getRagContext(chatInput, ragConfig) {
   return (data || []).map((row) => row.content);
 }
 
-/**
- * Fetches all rows from the document_metadata table in Postgres.
- * Provides the AI with a list of available reference documents.
- *
- * A new Pool is created per call to avoid holding an idle connection open
- * on Render's free tier where the DB may be paused between requests.
- *
- * @param {Object} dbConfig - Database configuration from the brand config (brand.db)
- * @returns {Promise<Object[]>} Array of document metadata rows
- */
-async function getDocumentMetadata(dbConfig) {
-  const pool = new Pool({ connectionString: dbConfig.connectionString, family: 4 });
-  try {
-    const result = await pool.query("SELECT * FROM document_metadata");
-    return result.rows;
-  } finally {
-    await pool.end();
-  }
-}
+
+// async function getDocumentMetadata(dbConfig) {
+//   const pool = new Pool({ connectionString: dbConfig.connectionString, family: 4 });
+//   try {
+//     const result = await pool.query("SELECT * FROM document_metadata");
+//     return result.rows;
+//   } finally {
+//     await pool.end();
+//   }
+// }
 
 /**
- * Builds the combined user message that includes RAG context, document metadata,
- * and the original user prompt. Used identically across all three AI providers.
+ * Builds the combined user message that includes RAG context and the original
+ * user prompt. Used identically across all three AI providers.
  *
  * @param {string[]} ragContext - Array of relevant text chunks
- * @param {Object[]} docMetadata - Rows from document_metadata table
  * @param {string} userPrompt - The original user prompt (blog title instruction)
  * @returns {string} The complete user message to send to the AI
  */
-function buildUserMessage(ragContext, docMetadata, userPrompt) {
+function buildUserMessage(ragContext, userPrompt) {
   return `Relevant context from the Achora website:
 ---
 ${ragContext.join("\n---\n")}
-
-Available reference documents:
-${JSON.stringify(docMetadata, null, 2)}
 
 ---
 
@@ -93,7 +79,7 @@ ${userPrompt}`;
  * @param {Object[]} docMetadata - Document metadata rows
  * @returns {Promise<string>} Raw text response from OpenAI (may contain markdown fences)
  */
-async function callOpenAI(systemPrompt, userPrompt, ragContext, docMetadata) {
+async function callOpenAI(systemPrompt, userPrompt, ragContext) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const response = await openai.chat.completions.create({
@@ -101,7 +87,7 @@ async function callOpenAI(systemPrompt, userPrompt, ragContext, docMetadata) {
     max_tokens: 4096,
     messages: [
       { role: "system", content: systemPrompt },
-      { role: "user", content: buildUserMessage(ragContext, docMetadata, userPrompt) },
+      { role: "user", content: buildUserMessage(ragContext, userPrompt) },
     ],
   });
 
@@ -117,7 +103,7 @@ async function callOpenAI(systemPrompt, userPrompt, ragContext, docMetadata) {
  * @param {Object[]} docMetadata - Document metadata rows
  * @returns {Promise<string>} Raw text response from Gemini (may contain markdown fences)
  */
-async function callGemini(systemPrompt, userPrompt, ragContext, docMetadata) {
+async function callGemini(systemPrompt, userPrompt, ragContext) {
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
 
   const model = genAI.getGenerativeModel({
@@ -126,7 +112,7 @@ async function callGemini(systemPrompt, userPrompt, ragContext, docMetadata) {
   });
 
   const result = await model.generateContent(
-    buildUserMessage(ragContext, docMetadata, userPrompt)
+    buildUserMessage(ragContext, userPrompt)
   );
 
   return result.response.text();
@@ -142,7 +128,7 @@ async function callGemini(systemPrompt, userPrompt, ragContext, docMetadata) {
  * @param {Object[]} docMetadata - Document metadata rows
  * @returns {Promise<string>} Raw JSON string response from Claude
  */
-async function callClaude(systemPrompt, userPrompt, ragContext, docMetadata) {
+async function callClaude(systemPrompt, userPrompt, ragContext) {
   const anthropic = new Anthropic(); // reads ANTHROPIC_API_KEY from environment automatically
 
   const response = await anthropic.messages.create({
@@ -150,7 +136,7 @@ async function callClaude(systemPrompt, userPrompt, ragContext, docMetadata) {
     max_tokens: 4096,
     system: systemPrompt,
     messages: [
-      { role: "user", content: buildUserMessage(ragContext, docMetadata, userPrompt) },
+      { role: "user", content: buildUserMessage(ragContext, userPrompt) },
     ],
   });
 
@@ -229,10 +215,7 @@ function parseAiResponse(rawString) {
  * @throws {Error} If RAG retrieval, AI generation, or JSON parsing fails
  */
 export async function generateBlogContent(chatInput, model, brand) {
-  const [ragContext, docMetadata] = await Promise.all([
-    getRagContext(chatInput, brand.rag),
-    getDocumentMetadata(brand.db),
-  ]);
+  const ragContext = await getRagContext(chatInput, brand.rag);
 
   const { systemPrompt, defaultModel } = brand.ai;
   const normalizedModel = (model || defaultModel).toLowerCase();
@@ -240,14 +223,14 @@ export async function generateBlogContent(chatInput, model, brand) {
   let rawOutput;
 
   if (normalizedModel.includes("gemini")) {
-    rawOutput = await callGemini(systemPrompt, chatInput, ragContext, docMetadata);
+    rawOutput = await callGemini(systemPrompt, chatInput, ragContext);
     rawOutput = await cleanJsonWithGpt(rawOutput);
   } else if (normalizedModel.includes("claude")) {
-    rawOutput = await callClaude(systemPrompt, chatInput, ragContext, docMetadata);
+    rawOutput = await callClaude(systemPrompt, chatInput, ragContext);
     // Claude returns clean JSON directly — no cleaning step needed
   } else {
     // Default: OpenAI (also handles unrecognised values)
-    rawOutput = await callOpenAI(systemPrompt, chatInput, ragContext, docMetadata);
+    rawOutput = await callOpenAI(systemPrompt, chatInput, ragContext);
     rawOutput = await cleanJsonWithGpt(rawOutput);
   }
 
