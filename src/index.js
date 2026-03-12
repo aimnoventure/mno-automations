@@ -1,6 +1,11 @@
 // dotenv/config MUST be imported first — brand configs read process.env at import time
 import "dotenv/config";
 
+// Force IPv4-first DNS resolution globally — prevents ENETUNREACH errors on hosts
+// (e.g. Render) where IPv6 routing is unavailable but DNS returns AAAA records.
+import { setDefaultResultOrder } from "dns";
+setDefaultResultOrder("ipv4first");
+
 import express from "express";
 import { handleGenerateContentWebhook } from "./webhooks/generate-content.webhook.js";
 
