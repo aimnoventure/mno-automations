@@ -13,6 +13,9 @@ import { createHmac, timingSafeEqual } from "crypto";
  * @throws {Error} If the Authorization header is missing, malformed, or the signature does not match
  */
 export function validateWebhookSignature(req, secret) {
+  // If no secret is configured, skip validation (Monday simple webhooks don't provide HMAC secrets)
+  if (!secret) return;
+
   const authHeader = req.headers["authorization"];
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
