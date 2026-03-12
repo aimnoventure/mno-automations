@@ -189,7 +189,10 @@ async function cleanJsonWithGpt(rawOutput) {
  */
 function parseAiResponse(rawString) {
   try {
-    return JSON.parse(rawString.trim());
+    const start = rawString.indexOf('{');
+    const end = rawString.lastIndexOf('}');
+    const cleaned = start !== -1 && end !== -1 ? rawString.slice(start, end + 1) : rawString.trim();
+    return JSON.parse(cleaned);
   } catch (err) {
     throw new Error(
       `Failed to parse AI JSON response: ${err.message}\n` +
