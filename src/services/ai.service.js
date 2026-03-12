@@ -51,7 +51,7 @@ async function getRagContext(chatInput, ragConfig) {
  * @returns {Promise<Object[]>} Array of document metadata rows
  */
 async function getDocumentMetadata(dbConfig) {
-  const pool = new Pool({ connectionString: dbConfig.connectionString });
+  const pool = new Pool({ connectionString: dbConfig.connectionString, family: 4 });
   try {
     const result = await pool.query("SELECT * FROM document_metadata");
     return result.rows;
