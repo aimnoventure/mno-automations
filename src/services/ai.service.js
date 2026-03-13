@@ -40,15 +40,28 @@ async function getRagContext(chatInput, ragConfig) {
 }
 
 
-// async function getDocumentMetadata(dbConfig) {
-//   const pool = new Pool({ connectionString: dbConfig.connectionString, family: 4 });
-//   try {
-//     const result = await pool.query("SELECT * FROM document_metadata");
-//     return result.rows;
-//   } finally {
-//     await pool.end();
-//   }
-// }
+/**
+ * Retrieves all rows from the document_metadata table using the Supabase client.
+ * Logs a success or failure message so you can confirm connectivity.
+ *
+ * @param {Object} ragConfig - RAG configuration from the brand config (brand.rag)
+ * @returns {Promise<Object[]>} Array of document metadata rows
+ */
+async function getDocumentMetadata(ragConfig) {
+  const supabase = createClient(ragConfig.supabaseUrl, ragConfig.supabaseKey);
+
+  const { data, error } = await supabase
+    .from(ragConfig.metadataTable)
+    .select("*");
+
+  if (error) {
+    console.error("[getDocumentMetadata] Connection failed:", error.message);
+    throw new Error(`Supabase metadata error: ${error.message}`);
+  }
+
+  console.log(`[getDocumentMetadata] Connected successfully — ${data.length} row(s) retrieved from "${ragConfig.metadataTable}"`);
+  return data;
+}
 
 /**
  * Builds the combined user message that includes RAG context and the original
@@ -58,14 +71,17 @@ async function getRagContext(chatInput, ragConfig) {
  * @param {string} userPrompt - The original user prompt (blog title instruction)
  * @returns {string} The complete user message to send to the AI
  */
-function buildUserMessage(ragContext, userPrompt) {
-  return `Relevant context from the Achora website:
+function buildUserMessage(ragContext, docMetadata, userPrompt) {
+  const metaBlock = docMetadata.length
+    ? `Document metadata:\n${JSON.stringify(docMetadata, null, 2)}`
+    : "";
+
+  return `Relevant context from the website:
 ---
 ${ragContext.join("\n---\n")}
 
 ---
-
-${userPrompt}`;
+${metaBlock ? `\n${metaBlock}\n\n---\n\n` : "\n"}${userPrompt}`;
 }
 
 // ── AI provider callers ────────────────────────────────────────────────────────
@@ -79,7 +95,7 @@ ${userPrompt}`;
  * @param {Object[]} docMetadata - Document metadata rows
  * @returns {Promise<string>} Raw text response from OpenAI (may contain markdown fences)
  */
-async function callOpenAI(systemPrompt, userPrompt, ragContext) {
+async function callOpenAI(systemPrompt, userPrompt, ragContext, docMetadata) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const response = await openai.chat.completions.create({
@@ -87,7 +103,7 @@ async function callOpenAI(systemPrompt, userPrompt, ragContext) {
     max_tokens: 4096,
     messages: [
       { role: "system", content: systemPrompt },
-      { role: "user", content: buildUserMessage(ragContext, userPrompt) },
+      { role: "user", content: buildUserMessage(ragContext, docMetadata, userPrompt) },
     ],
   });
 
@@ -103,7 +119,7 @@ async function callOpenAI(systemPrompt, userPrompt, ragContext) {
  * @param {Object[]} docMetadata - Document metadata rows
  * @returns {Promise<string>} Raw text response from Gemini (may contain markdown fences)
  */
-async function callGemini(systemPrompt, userPrompt, ragContext) {
+async function callGemini(systemPrompt, userPrompt, ragContext, docMetadata) {
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
 
   const model = genAI.getGenerativeModel({
@@ -112,7 +128,7 @@ async function callGemini(systemPrompt, userPrompt, ragContext) {
   });
 
   const result = await model.generateContent(
-    buildUserMessage(ragContext, userPrompt)
+    buildUserMessage(ragContext, docMetadata, userPrompt)
   );
 
   return result.response.text();
@@ -128,7 +144,7 @@ async function callGemini(systemPrompt, userPrompt, ragContext) {
  * @param {Object[]} docMetadata - Document metadata rows
  * @returns {Promise<string>} Raw JSON string response from Claude
  */
-async function callClaude(systemPrompt, userPrompt, ragContext) {
+async function callClaude(systemPrompt, userPrompt, ragContext, docMetadata) {
   const anthropic = new Anthropic(); // reads ANTHROPIC_API_KEY from environment automatically
 
   const response = await anthropic.messages.create({
@@ -136,7 +152,7 @@ async function callClaude(systemPrompt, userPrompt, ragContext) {
     max_tokens: 4096,
     system: systemPrompt,
     messages: [
-      { role: "user", content: buildUserMessage(ragContext, userPrompt) },
+      { role: "user", content: buildUserMessage(ragContext, docMetadata, userPrompt) },
     ],
   });
 
@@ -221,7 +237,10 @@ function parseAiResponse(rawString) {
  * @throws {Error} If RAG retrieval, AI generation, or JSON parsing fails
  */
 export async function generateBlogContent(chatInput, model, brand) {
-  const ragContext = await getRagContext(chatInput, brand.rag);
+  const [ragContext, docMetadata] = await Promise.all([
+    getRagContext(chatInput, brand.rag),
+    getDocumentMetadata(brand.rag),
+  ]);
 
   const { systemPrompt, defaultModel } = brand.ai;
   const normalizedModel = (model || defaultModel).toLowerCase();
@@ -229,14 +248,14 @@ export async function generateBlogContent(chatInput, model, brand) {
   let rawOutput;
 
   if (normalizedModel.includes("gemini")) {
-    rawOutput = await callGemini(systemPrompt, chatInput, ragContext);
+    rawOutput = await callGemini(systemPrompt, chatInput, ragContext, docMetadata);
     rawOutput = await cleanJsonWithGpt(rawOutput);
   } else if (normalizedModel.includes("claude")) {
-    rawOutput = await callClaude(systemPrompt, chatInput, ragContext);
+    rawOutput = await callClaude(systemPrompt, chatInput, ragContext, docMetadata);
     // Claude returns clean JSON directly — no cleaning step needed
   } else {
     // Default: OpenAI (also handles unrecognised values)
-    rawOutput = await callOpenAI(systemPrompt, chatInput, ragContext);
+    rawOutput = await callOpenAI(systemPrompt, chatInput, ragContext, docMetadata);
     rawOutput = await cleanJsonWithGpt(rawOutput);
   }
 
