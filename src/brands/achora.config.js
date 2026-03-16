@@ -188,6 +188,7 @@ Return ONLY the valid JSON object with no additional text, explanations, or comm
     matchFunction: "match_website_chunks",
     metadataTable: "document_metadata",
     websiteMetadataTable: "website_metadata",
+    websiteMetadataColumns: "title", // only fetch the title column to stay within TPM limits
   },
 
   db: {
@@ -210,7 +211,7 @@ Return ONLY the valid JSON object with no additional text, explanations, or comm
 
     statusLabels: {
       done: "Done",
-      failed: "Generation Failed",
+      failed: "Failed to Generate",
     },
 
     systemPrompt: `# ROLE & PURPOSE

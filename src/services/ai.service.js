@@ -233,9 +233,10 @@ function parseAiResponse(rawString) {
 async function getWebsiteMetadata(ragConfig) {
   const supabase = createClient(ragConfig.supabaseUrl, ragConfig.supabaseKey);
 
+  const columns = ragConfig.websiteMetadataColumns || "*";
   const { data, error } = await supabase
     .from(ragConfig.websiteMetadataTable)
-    .select("*");
+    .select(columns);
 
   if (error) {
     console.error("[getWebsiteMetadata] Query failed:", error.message);
