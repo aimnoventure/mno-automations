@@ -195,7 +195,6 @@ Return ONLY the valid JSON object with no additional text, explanations, or comm
   },
 
   titleGeneration: {
-    webhookSecret: process.env.MONDAY_TITLE_WEBHOOK_SECRET_ACHORA,
     sourceBoardId: "5025222939",  // topics board — where trigger fires & status is updated
     targetBoardId: "5025223094",  // blog titles board — where generated title items are created
     targetGroupId: "topics",

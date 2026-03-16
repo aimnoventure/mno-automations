@@ -45,9 +45,9 @@ export async function handleGenerateTitleWebhook(req, res) {
     return res.status(400).json({ error: `Brand "${brandId}" has no titleGeneration config` });
   }
 
-  // Step 3: Validate HMAC-SHA256 webhook signature
+  // Step 3: Validate HMAC-SHA256 webhook signature (skipped when no secret is configured)
   try {
-    validateWebhookSignature(req, brand.titleGeneration.webhookSecret);
+    validateWebhookSignature(req, brand.monday.webhookSecret);
   } catch (err) {
     console.error(`[generate-title] Signature validation failed for brand "${brandId}":`, err.message);
     return res.status(401).json({ error: "Invalid webhook signature" });
