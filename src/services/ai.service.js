@@ -220,7 +220,33 @@ function parseAiResponse(rawString) {
   }
 }
 
-// ── Main export ────────────────────────────────────────────────────────────────
+// ── Website metadata helper (for title generation) ────────────────────────────
+
+/**
+ * Retrieves all rows from the website_metadata table using the Supabase client.
+ * Used by the title generation pipeline to check for existing blog titles
+ * and prevent duplication.
+ *
+ * @param {Object} ragConfig - RAG configuration from the brand config (brand.rag)
+ * @returns {Promise<Object[]>} Array of website metadata rows
+ */
+async function getWebsiteMetadata(ragConfig) {
+  const supabase = createClient(ragConfig.supabaseUrl, ragConfig.supabaseKey);
+
+  const { data, error } = await supabase
+    .from(ragConfig.websiteMetadataTable)
+    .select("*");
+
+  if (error) {
+    console.error("[getWebsiteMetadata] Query failed:", error.message);
+    throw new Error(`Supabase website_metadata error: ${error.message}`);
+  }
+
+  console.log(`[getWebsiteMetadata] Retrieved ${data.length} row(s) from "${ragConfig.websiteMetadataTable}"`);
+  return data;
+}
+
+// ── Main exports ────────────────────────────────────────────────────────────────
 
 /**
  * Orchestrates the full AI content generation pipeline:
@@ -236,6 +262,29 @@ function parseAiResponse(rawString) {
  * @returns {Promise<Object>} Parsed blog content: { title, seoTitle, slug, metaDescription, content, keywords, token_used }
  * @throws {Error} If RAG retrieval, AI generation, or JSON parsing fails
  */
+/**
+ * Orchestrates the blog title generation pipeline:
+ * 1. Fetch existing titles from Supabase website_metadata table
+ * 2. Call OpenAI gpt-4o with the brand's title strategist system prompt
+ * 3. Clean and parse the JSON response
+ *
+ * @param {string} chatInput - The user prompt, e.g. "Generate 5 blog titles about: ..."
+ * @param {Object} brand - The full brand config object from brands/index.js
+ * @returns {Promise<Object>} Parsed titles object: { blog_titles: string[], metadata_check: {...} }
+ * @throws {Error} If Supabase query, AI generation, or JSON parsing fails
+ */
+export async function generateBlogTitles(chatInput, brand) {
+  const websiteMetadata = await getWebsiteMetadata(brand.rag);
+
+  const { systemPrompt } = brand.titleGeneration;
+
+  // No RAG vector chunks needed — pass empty array; website_metadata fills the context slot
+  let rawOutput = await callOpenAI(systemPrompt, chatInput, [], websiteMetadata);
+  rawOutput = await cleanJsonWithGpt(rawOutput);
+
+  return parseAiResponse(rawOutput);
+}
+
 export async function generateBlogContent(chatInput, model, brand) {
   const [ragContext, docMetadata] = await Promise.all([
     getRagContext(chatInput, brand.rag),

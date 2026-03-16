@@ -70,6 +70,57 @@ export async function getItemById(pulseId, apiKey) {
  * @returns {Promise<Object>} The updated item: { id, name }
  * @throws {Error} If the API call fails or returns GraphQL errors
  */
+/**
+ * Creates a new item in a Monday.com board group.
+ * Used by the title generation pipeline to create one item per generated blog title
+ * in the target titles board.
+ *
+ * @param {string|number} boardId - The Monday board ID to create the item in
+ * @param {string} groupId - The group ID within the board (e.g. "topics")
+ * @param {string} name - The item name (the generated blog title)
+ * @param {Object} columnValues - Map of column IDs to their initial values
+ * @param {string} apiKey - Monday.com API token
+ * @returns {Promise<Object>} The created item: { id, name }
+ * @throws {Error} If the API call fails or returns GraphQL errors
+ */
+export async function createBoardItem(boardId, groupId, name, columnValues, apiKey) {
+  const columnValuesLiteral = JSON.stringify(JSON.stringify(columnValues));
+
+  const mutation = `
+    mutation {
+      create_item(
+        board_id: ${boardId},
+        group_id: "${groupId}",
+        item_name: ${JSON.stringify(name)},
+        column_values: ${columnValuesLiteral}
+      ) {
+        id
+        name
+      }
+    }
+  `;
+
+  const response = await axios.post(
+    MONDAY_API_URL,
+    { query: mutation },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: apiKey,
+      },
+      timeout: TIMEOUT_MS,
+    }
+  );
+
+  if (response.data.errors) {
+    throw new Error(
+      `Monday API errors in createBoardItem: ${JSON.stringify(response.data.errors)}`
+    );
+  }
+
+  return response.data?.data?.create_item;
+}
+
 export async function updateItemColumns(boardId, itemId, columnValues, apiKey) {
   // Monday requires column_values to be a JSON string embedded as a GraphQL string literal.
   // JSON.stringify(columnValues) → JSON string
