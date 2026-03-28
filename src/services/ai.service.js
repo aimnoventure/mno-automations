@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
+import axios from "axios";
 // import pg from "pg";
 // const { Pool } = pg;
 
@@ -283,6 +284,77 @@ export async function generateBlogTitles(chatInput, brand) {
   let rawOutput = await callOpenAI(systemPrompt, chatInput, [], websiteMetadata);
   rawOutput = await cleanJsonWithGpt(rawOutput);
 
+  return parseAiResponse(rawOutput);
+}
+
+/**
+ * Generates newsletter content for Achora using the newsletter system prompt and RAG context.
+ *
+ * Returns a parsed JSON object with all newsletter sections. The blog_articles field
+ * in the returned object should be treated as a placeholder — it will be overridden
+ * by the real articles scraped from the Achora blog in the webhook pipeline.
+ *
+ * @param {string} userPrompt - Built prompt containing topic, email direction, month, year
+ * @param {Object} brand - Full brand config (uses brand.newsletter.ai.systemPrompt and brand.rag)
+ * @returns {Promise<Object>} Parsed newsletter content: { hero_tagline, greeting, seasonal_message,
+ *   intro_paragraph, section1, section2, section3, participant_insight, blog_articles }
+ */
+export async function generateNewsletterContent(userPrompt, brand) {
+  const ragContext = await getRagContext(userPrompt, brand.rag);
+  const { systemPrompt } = brand.newsletter.ai;
+
+  let rawOutput = await callOpenAI(systemPrompt, userPrompt, ragContext, []);
+  rawOutput = await cleanJsonWithGpt(rawOutput);
+  return parseAiResponse(rawOutput);
+}
+
+/**
+ * Fetches the Achora blog page, strips HTML tags to plain text, then calls
+ * OpenAI to extract the 2 most recent blog articles (title, description, url).
+ *
+ * Does NOT use RAG — the scraped HTML provides all the context needed.
+ *
+ * @param {string} blogUrl - URL of the blog listing page (e.g. https://www.achora.com.au/blog/)
+ * @returns {Promise<Object>} { blog_articles: [{ title, description, url }, { title, description, url }] }
+ */
+export async function scrapeBlogArticles(blogUrl) {
+  const htmlResponse = await axios.get(blogUrl, { timeout: 15_000 });
+
+  // Strip HTML tags and collapse whitespace, then take only the first 15,000 characters.
+  // Blog listings show the most recent articles near the top, so truncating is safe
+  // and keeps the prompt well within token limits for gpt-4o-mini.
+  const text = htmlResponse.data
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 15_000);
+
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",  // sufficient for simple extraction; much higher TPM limit
+    max_tokens: 1024,
+    messages: [
+      {
+        role: "user",
+        content: `Find the latest 2 blog articles from the page content below. Extract the title, a 2-sentence description, and the full absolute URL for each article.
+
+Page content:
+${text}
+
+Return ONLY valid JSON with no markdown, no code fences, no explanation:
+{
+  "blog_articles": [
+    { "title": "", "description": "", "url": "" },
+    { "title": "", "description": "", "url": "" }
+  ]
+}`,
+      },
+    ],
+  });
+
+  let rawOutput = response.choices[0].message.content;
+  rawOutput = await cleanJsonWithGpt(rawOutput);
   return parseAiResponse(rawOutput);
 }
 

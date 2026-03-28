@@ -1,0 +1,232 @@
+{
+  "Name": "April 2026 Newsletter [1774718787705]",
+  "Subject": "Your NDIS Plan Review: What You Need to Know",
+  "FromName": "Achora",
+  "FromEmail": "admin@achora.com.au",
+  "ReplyTo": "admin@achora.com.au",
+  "ListIDs": [
+    "8382f5f4fcba84eb9b3d4f7f3f3c94b4"
+  ],
+  "SegmentIDs": [],
+  "TemplateID": "1833ac2564acafaae389bf5f3937ecbf",
+  "TemplateContent": {
+    "Singlelines": [
+      {
+        "Content": "Hi, there!",
+        "Href": ""
+      },
+      {
+        "Content": "Contact Achora",
+        "Href": "https://achora.com.au/contact"
+      },
+      {
+        "Content": "Achora · 517/5 Celebration Drive Bella Vista 2153 New South Wales · Australia",
+        "Href": ""
+      },
+      {
+        "Content": "You are receiving this email as you have signed up to one of Achora's products or services, or have come into contact with one of our online service offerings.",
+        "Href": ""
+      }
+    ],
+    "Multilines": [
+      {
+        "Content": "<p>Welcome to autumn!</p><p>March marks the start of autumn, a time of transition and preparation. As we settle into the new season, it's also an ideal time to focus on preparing for your upcoming NDIS plan reviews. Let's ensure your plans are ready for the year ahead.</p>"
+      }
+    ],
+    "Images": [
+      {
+        "Content": "https://i1.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Achora-Colored.png",
+        "Alt": "Achora",
+        "Href": "https://achora.com.au"
+      },
+      {
+        "Content": "https://i1.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/CopyofSILSDAAccommodation1-9900000000079e3c.png",
+        "Alt": "Achora Newsletter",
+        "Href": "https://achora.com.au"
+      },
+      {
+        "Content": "https://i1.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Achora-Colored1.png",
+        "Alt": "Achora",
+        "Href": "https://achora.com.au"
+      }
+    ],
+    "Repeaters": [
+      {
+        "Items": [
+          {
+            "Layout": "Feature Card - Image Left (Purple)",
+            "Singlelines": [
+              {
+                "Content": "Is Your NDIS Plan Ready for Review?",
+                "Href": ""
+              },
+              {
+                "Content": "Get Started",
+                "Href": "https://achora.com.au/plan-check"
+              }
+            ],
+            "Multilines": [
+              {
+                "Content": "<p>List your achievements and challenges</p><p>Update your goals and support needs</p><p>Gather recent reports and assessments</p>"
+              }
+            ],
+            "Images": [
+              {
+                "Content": "https://i2.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Jan26_StakeholderNewsletterHeaderImage_CoraReading1-9900000000028a3c.png",
+                "Alt": "NDIS Plan Support",
+                "Href": "https://achora.com.au/plan-check"
+              }
+            ]
+          },
+          {
+            "Layout": "Feature Card - Image Right (Teal)",
+            "Singlelines": [
+              {
+                "Content": "Steps to a Successful NDIS Review",
+                "Href": ""
+              },
+              {
+                "Content": "Preparation: Organize all necessary documents",
+                "Href": ""
+              },
+              {
+                "Content": "Communication: Discuss needs with your provider",
+                "Href": ""
+              },
+              {
+                "Content": "Focus: Highlight what worked and what didn't",
+                "Href": ""
+              },
+              {
+                "Content": "Learn More",
+                "Href": "https://achora.com.au/ndis-goals"
+              }
+            ],
+            "Multilines": [],
+            "Images": [
+              {
+                "Content": "https://i3.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Jan26_NewsletterHeader_ClientNewsletterHeaderImage1-9900000000028a3c.png",
+                "Alt": "NDIS Tips",
+                "Href": "https://achora.com.au/ndis-goals"
+              }
+            ]
+          },
+          {
+            "Layout": "Feature Card - Split (Yellow/White)",
+            "Singlelines": [
+              {
+                "Content": "NDIS Plan Review Checklist",
+                "Href": ""
+              },
+              {
+                "Content": "Download Now",
+                "Href": "https://achora.com.au/contact"
+              }
+            ],
+            "Multilines": [
+              {
+                "Content": "<p>Download our comprehensive checklist to guide you through the NDIS plan review process. It includes all essential steps and documents for a successful review, helping you advocate for the support you need.</p>"
+              }
+            ],
+            "Images": [
+              {
+                "Content": "https://i4.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Jan26_NewsletterHeader_StakeholderNewsletterHeader4-9900000000028a3c.png",
+                "Alt": "NDIS Resource",
+                "Href": "https://achora.com.au/contact"
+              }
+            ]
+          },
+          {
+            "Layout": "Full-Width Image + Caption",
+            "Singlelines": [],
+            "Multilines": [
+              {
+                "Content": "<p>Working alongside our amazing participants teaches us that thorough preparation and clear communication are key to a successful NDIS plan review. Your voice and experiences are vital in shaping your support journey.</p>"
+              }
+            ],
+            "Images": [
+              {
+                "Content": "https://i5.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Jan26_Thumbnail_ParticipantsTaughtUsVideo-9900000000079e3c.png",
+                "Alt": "Achora Highlight",
+                "Href": ""
+              }
+            ]
+          },
+          {
+            "Layout": "Section Heading",
+            "Singlelines": [
+              {
+                "Content": "Interesting Reads:",
+                "Href": ""
+              }
+            ],
+            "Multilines": [],
+            "Images": []
+          },
+          {
+            "Layout": "Blog Card - Two Column (Teal)",
+            "Singlelines": [
+              {
+                "Content": "Latest NDIS Updates and Insights",
+                "Href": "https://www.achora.com.au/blog/latest-ndis-updates-and-insights"
+              },
+              {
+                "Content": "Learn More",
+                "Href": "https://www.achora.com.au/blog/latest-ndis-updates-and-insights"
+              }
+            ],
+            "Multilines": [
+              {
+                "Content": "<p>Stay informed with the latest updates on NDIS policies and programs. This article provides expert insights and guidance on how to navigate recent changes.</p>"
+              }
+            ],
+            "Images": [
+              {
+                "Content": "https://i6.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Jan26_Blog_ClientNewsletter-BlogImage_CheckInConve-990000079e028a3c.png",
+                "Alt": "Latest NDIS Updates and Insights",
+                "Href": "https://www.achora.com.au/blog/latest-ndis-updates-and-insights"
+              }
+            ]
+          },
+          {
+            "Layout": "Blog Card - Two Column (Yellow)",
+            "Singlelines": [
+              {
+                "Content": "Tips for Effective NDIS Plan Management",
+                "Href": "https://www.achora.com.au/blog/tips-for-effective-ndis-plan-management"
+              },
+              {
+                "Content": "Read More",
+                "Href": "https://www.achora.com.au/blog/tips-for-effective-ndis-plan-management"
+              }
+            ],
+            "Multilines": [
+              {
+                "Content": "<p>Discover essential tips for managing your NDIS plan effectively. This article covers strategies to ensure you get the most out of your support and services.</p>"
+              }
+            ],
+            "Images": [
+              {
+                "Content": "https://i7.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Jan26_NewsletterHeader_StakeholderNewsletterHeader3-39738b4b69de120c.png",
+                "Alt": "Tips for Effective NDIS Plan Management",
+                "Href": "https://www.achora.com.au/blog/tips-for-effective-ndis-plan-management"
+              }
+            ]
+          },
+          {
+            "Layout": "Full-Width Banner",
+            "Singlelines": [],
+            "Multilines": [],
+            "Images": [
+              {
+                "Content": "https://i8.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Option2-9900000000079e3c.png",
+                "Alt": "Achora Banner",
+                "Href": "https://achora.com.au"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

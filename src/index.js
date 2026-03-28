@@ -9,6 +9,7 @@ setDefaultResultOrder("ipv4first");
 import express from "express";
 import { handleGenerateContentWebhook } from "./webhooks/generate-content.webhook.js";
 import { handleGenerateTitleWebhook } from "./webhooks/generate-title.webhook.js";
+import { handleGenerateNewsletterWebhook } from "./webhooks/generate-newsletter.webhook.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +35,7 @@ app.get("/health", (_req, res) => res.json({ status: "ok" }));
 // ── Webhook routes ────────────────────────────────────────────────────────────
 app.post("/webhooks/:brandId/generate-content", handleGenerateContentWebhook);
 app.post("/webhooks/:brandId/generate-title", handleGenerateTitleWebhook);
+app.post("/webhooks/:brandId/generate-newsletter", handleGenerateNewsletterWebhook);
 
 // ── Start server ──────────────────────────────────────────────────────────────
 app.listen(PORT, () => {

@@ -195,6 +195,132 @@ Return ONLY the valid JSON object with no additional text, explanations, or comm
     connectionString: process.env.POSTGRES_CONNECTION_STRING,
   },
 
+  newsletter: {
+    boardId: "5026304080",
+    blogUrl: "https://www.achora.com.au/blog/",
+    webhookSecret: process.env.MONDAY_NEWSLETTER_WEBHOOK_SECRET_ACHORA,
+
+    columns: {
+      emailDirection:    1,   // text_mm0a4cx3  — "Email Direction/Prompt"
+      additionalSources: 2,   // text_mky8g6x6  — "Source (optional)"
+      status:            3,   // status         — trigger column
+      emailSubject:      4,   // text_mm09rqhs  — "Email Subject"
+      fromName:          5,   // text_mm09yb9q  — "Email From Name"
+      fromEmail:         6,   // text_mm09dpm6  — "Email From Email Address"
+      bannerLink:        7,   // link_mm095jv5  — "Banner Link"
+      featureImage1:     8,   // link_mm09hvr4  — "Feature Card Image 1"
+      featureImage2:     9,   // link_mm097dap  — "Feature Card Image 2"
+      featureImage3:     10,  // link_mm097nc   — "Feature Card Image 3"
+      videoThumbnail:    11,  // link_mm0939w7  — "Featured Video Thumbnail Link"
+      logo:              12,  // link_mm09vqjt  — "Logo"
+      tokenUsed:         13,  // numeric_mky1snpf — "Token Used"
+    },
+
+    statusLabels: {
+      campaignCreated:  "Campaign Created",
+      generationFailed: "Generation Failed",
+    },
+
+    campaignMonitor: {
+      apiKey:        process.env.CAMPAIGN_MONITOR_API_KEY_ACHORA,
+      clientId:      "f77f17ad4a820cf7294b34b719f574cb",
+      templateId:    "1833ac2564acafaae389bf5f3937ecbf",
+      defaultListId: "8382f5f4fcba84eb9b3d4f7f3f3c94b4",
+    },
+
+    defaultImages: {
+      headerLogo:   "https://i1.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Achora-Colored.png",
+      banner:       "https://i1.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/CopyofSILSDAAccommodation1-9900000000079e3c.png",
+      featureCard1: "https://i2.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Jan26_StakeholderNewsletterHeaderImage_CoraReading1-9900000000028a3c.png",
+      featureCard2: "https://i3.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Jan26_NewsletterHeader_ClientNewsletterHeaderImage1-9900000000028a3c.png",
+      featureCard3: "https://i4.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Jan26_NewsletterHeader_StakeholderNewsletterHeader4-9900000000028a3c.png",
+      videoThumb:   "https://i5.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Jan26_Thumbnail_ParticipantsTaughtUsVideo-9900000000079e3c.png",
+      blogImage1:   "https://i6.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Jan26_Blog_ClientNewsletter-BlogImage_CheckInConve-990000079e028a3c.png",
+      blogImage2:   "https://i7.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Jan26_NewsletterHeader_StakeholderNewsletterHeader3-39738b4b69de120c.png",
+      footerBanner: "https://i8.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Option2-9900000000079e3c.png",
+      footerLogo:   "https://i1.createsend1.com/ei/y/CE/FDE/3E2/155240/csfinal/Achora-Colored1.png",
+    },
+
+    ai: {
+      systemPrompt: `You are a newsletter content writer for Achora, an Australian NDIS (National Disability Insurance Scheme) provider specializing in Support Coordination and Plan Management services.
+
+**Brand Voice:**
+- Warm, supportive, and empowering
+- Clear and jargon-free (explain NDIS terms simply when needed)
+- Action-oriented with practical advice
+- Encouraging without being patronizing
+- Professional but approachable
+
+**Target Audience:** NDIS participants, their families, and carers navigating the NDIS system.
+
+**Content Structure Requirements:**
+
+1. **Hero Tagline:** A short, inspiring headline (max 8 words) related to the topic
+
+2. **Greeting:** Friendly greeting (keep as "Hi, there!" unless personalization is specified)
+
+3. **Seasonal Message:** Brief timely message relevant to the month/season (2-5 words)
+
+4. **Intro Paragraph:** 2-3 sentences setting context for this month's newsletter theme. Connect the season/timing to the topic naturally.
+
+5. **Section 1 - Primary Topic:**
+   - Heading: A question or statement that hooks the reader
+   - 3 bullet points: Key actionable insights (each 5-10 words, start with action verbs or key nouns)
+   - CTA text: Action button text (2-4 words)
+
+6. **Section 2 - Tips/Strategy:**
+   - Heading: Clear benefit-focused heading
+   - 3 bullet points: Practical tips formatted as "Category: Brief explanation" or simple action items
+   - CTA text: Action button text (2-4 words)
+
+7. **Section 3 - Resource/Download:**
+   - Heading: Resource or guide title (compelling, benefit-focused)
+   - Description: 2 sentences explaining the value of the resource and what the reader will gain
+   - CTA text: Download/access button text (2-4 words)
+
+8. **Participant Insight:**
+   - 2 sentences about a lesson or insight Achora learned from working with participants this month. Should be inspirational and relate to the topic. Frame it as "Working alongside our amazing participants teaches us..." or similar.
+
+9. **Blog Articles:** Placeholder only — will be replaced by real scraped articles.
+   - Include 2 placeholder blog article objects to satisfy the JSON schema.
+
+**Output Rules:**
+- Return ONLY valid JSON
+- No markdown formatting, code blocks, or backticks
+- No explanations before or after the JSON
+- Ensure all strings are properly escaped
+- Keep content concise and scannable
+
+Required JSON structure:
+{
+  "hero_tagline": "",
+  "greeting": "Hi, there!",
+  "seasonal_message": "",
+  "intro_paragraph": "",
+  "section1": {
+    "heading": "",
+    "bullets": ["", "", ""],
+    "cta_text": ""
+  },
+  "section2": {
+    "heading": "",
+    "bullets": ["", "", ""],
+    "cta_text": ""
+  },
+  "section3": {
+    "heading": "",
+    "description": "",
+    "cta_text": ""
+  },
+  "participant_insight": "",
+  "blog_articles": [
+    { "title": "", "description": "", "url": "" },
+    { "title": "", "description": "", "url": "" }
+  ]
+}`,
+    },
+  },
+
   titleGeneration: {
     sourceBoardId: "5025222939",  // topics board — where trigger fires & status is updated
     targetBoardId: "5025223094",  // blog titles board — where generated title items are created
