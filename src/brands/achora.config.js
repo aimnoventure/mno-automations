@@ -218,7 +218,7 @@ Return ONLY the valid JSON object with no additional text, explanations, or comm
     },
 
     statusLabels: {
-      campaignCreated:  "Campaign Created",
+      campaignCreated:  "Content Generated",
       generationFailed: "Generation Failed",
     },
 
