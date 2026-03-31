@@ -4,6 +4,7 @@ import { getBrandById } from "../brands/index.js";
 import { validateWebhookSignature } from "../utils/validate-webhook.js";
 import { getItemById, updateItemColumns } from "../services/monday.service.js";
 import { generateNewsletterContent, scrapeBlogArticles } from "../services/ai.service.js";
+import { buildFormattedTemplate } from "../utils/format-newsletter-template.js";
 
 /**
  * Express route handler for POST /webhooks/:brandId/generate-newsletter.
@@ -126,9 +127,13 @@ async function runPipeline(event, brand) {
   try {
     const outputDir = path.resolve("output");
     await fs.mkdir(outputDir, { recursive: true });
-    const filename = path.join(outputDir, `newsletter-payload-${pulseId}-${Date.now()}.txt`);
+    const ts = Date.now();
+    const filename         = path.join(outputDir, `newsletter-payload-${pulseId}-${ts}.txt`);
+    const templateFilename = path.join(outputDir, `newsletter-template-${pulseId}-${ts}.txt`);
     await fs.writeFile(filename, JSON.stringify(payload, null, 2), "utf8");
+    await fs.writeFile(templateFilename, buildFormattedTemplate(payload), "utf8");
     console.log(`[newsletter] Payload written to ${filename}`);
+    console.log(`[newsletter] Template written to ${templateFilename}`);
   } catch (err) {
     console.error("[newsletter] Failed to write payload file:", err.message);
     await safeUpdateStatus(boardId, pulseId, brand.newsletter.statusLabels.generationFailed, brand);
