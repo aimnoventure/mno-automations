@@ -1,5 +1,3 @@
-import fs from "fs/promises";
-import path from "path";
 import { getBrandById } from "../brands/index.js";
 import { validateWebhookSignature } from "../utils/validate-webhook.js";
 import { getItemById, updateItemColumns } from "../services/monday.service.js";
@@ -125,19 +123,8 @@ async function runPipeline(event, brand) {
   // Stage 6: Build Campaign Monitor payload
   const payload = buildCampaignPayload(combined, columnValues, item.name, brand);
 
-  // Stage 7: Write payload to file (Campaign Monitor integration pending)
+  // Stage 7: Build formatted template
   const formattedTemplate = buildFormattedTemplate(payload);
-  try {
-    const outputDir = path.resolve("output");
-    await fs.mkdir(outputDir, { recursive: true });
-    const templateFilename = path.join(outputDir, `newsletter-template-${pulseId}-${Date.now()}.txt`);
-    await fs.writeFile(templateFilename, formattedTemplate, "utf8");
-    console.log(`[newsletter] Template written to ${templateFilename}`);
-  } catch (err) {
-    console.error("[newsletter] Failed to write payload file:", err.message);
-    await safeUpdateStatus(boardId, pulseId, brand.newsletter.statusLabels.generationFailed, brand);
-    return;
-  }
 
   // Stage 8: Update Monday item — Output column + status in one call
   try {
