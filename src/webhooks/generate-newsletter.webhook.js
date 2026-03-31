@@ -158,7 +158,7 @@ async function runPipeline(event, brand) {
       status: { label: brand.newsletter.statusLabels.campaignCreated },
     };
     if (outputColumnId) {
-      columnUpdates[outputColumnId] = { text: formattedTemplate };
+      columnUpdates[outputColumnId] = formattedTemplate;
     }
     await updateItemColumns(boardId, pulseId, columnUpdates, brand.monday.apiKey);
     console.log(`[newsletter] Monday item ${pulseId} updated to "${brand.newsletter.statusLabels.campaignCreated}"`);
@@ -197,8 +197,6 @@ export function buildCampaignPayload(combined, columnValues, itemName, brand) {
   const videoUrl   = columnValues[cols.videoThumbnail]?.text       || defaults.videoThumb;
   const logoUrl    = columnValues[cols.logo]?.text                 || defaults.footerLogo;
 
-  const now = new Date();
-  const monthYear = now.toLocaleString("en-AU", { month: "long", year: "numeric" });
   const campaignName = `${itemName} [${Date.now()}]`;
 
   const s1 = combined.section1 || {};
