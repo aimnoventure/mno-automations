@@ -130,18 +130,14 @@ const payload = buildCampaignPayload(combined, DUMMY_COLUMN_VALUES, TEST_ITEM_NA
 console.log("[test] Stage 3 complete.");
 console.log();
 
-// Stage 5: Write payload to file
-const outputDir  = path.resolve("output");
-const filename   = path.join(outputDir, `newsletter-test-${Date.now()}.txt`);
-
+// Stage 5: Write template to file
+const outputDir        = path.resolve("output");
 const templateFilename = path.join(outputDir, `newsletter-template-${Date.now()}.txt`);
 
 await fs.mkdir(outputDir, { recursive: true });
-await fs.writeFile(filename, JSON.stringify(payload, null, 2), "utf8");
 await fs.writeFile(templateFilename, buildFormattedTemplate(payload), "utf8");
 
 console.log("── Output ────────────────────────────────────────────────");
-console.log(`  Payload written to  : ${filename}`);
 console.log(`  Template written to : ${templateFilename}`);
 console.log("─────────────────────────────────────────────────────────");
 console.log();

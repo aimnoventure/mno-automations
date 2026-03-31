@@ -127,12 +127,8 @@ async function runPipeline(event, brand) {
   try {
     const outputDir = path.resolve("output");
     await fs.mkdir(outputDir, { recursive: true });
-    const ts = Date.now();
-    const filename         = path.join(outputDir, `newsletter-payload-${pulseId}-${ts}.txt`);
-    const templateFilename = path.join(outputDir, `newsletter-template-${pulseId}-${ts}.txt`);
-    await fs.writeFile(filename, JSON.stringify(payload, null, 2), "utf8");
+    const templateFilename = path.join(outputDir, `newsletter-template-${pulseId}-${Date.now()}.txt`);
     await fs.writeFile(templateFilename, buildFormattedTemplate(payload), "utf8");
-    console.log(`[newsletter] Payload written to ${filename}`);
     console.log(`[newsletter] Template written to ${templateFilename}`);
   } catch (err) {
     console.error("[newsletter] Failed to write payload file:", err.message);
