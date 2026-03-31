@@ -41,16 +41,17 @@ const DUMMY_COLUMN_VALUES = [
   { text: TEST_DIRECTION },         // 1: Email Direction/Prompt
   { text: "" },                     // 2: Source (optional)
   { text: "Generate Content" },     // 3: Status
-  { text: "Your NDIS Plan Review: What You Need to Know" },  // 4: Email Subject
-  { text: "Achora" },               // 5: From Name
-  { text: "admin@achora.com.au" },  // 6: From Email
-  { text: "" },                     // 7: Banner Link (blank → uses default image)
-  { text: "" },                     // 8: Feature Card Image 1
-  { text: "" },                     // 9: Feature Card Image 2
-  { text: "" },                     // 10: Feature Card Image 3
-  { text: "" },                     // 11: Featured Video Thumbnail
-  { text: "" },                     // 12: Logo
-  { text: "" },                     // 13: Token Used
+  { text: "" },                     // 4: Output (written by pipeline, not read)
+  { text: "Your NDIS Plan Review: What You Need to Know" },  // 5: Email Subject
+  { text: "Achora" },               // 6: From Name
+  { text: "admin@achora.com.au" },  // 7: From Email
+  { text: "" },                     // 8: Banner Link (blank → uses default image)
+  { text: "" },                     // 9: Feature Card Image 1
+  { text: "" },                     // 10: Feature Card Image 2
+  { text: "" },                     // 11: Feature Card Image 3
+  { text: "" },                     // 12: Featured Video Thumbnail
+  { text: "" },                     // 13: Logo
+  { text: "" },                     // 14: Token Used
 ];
 
 // ── Run ────────────────────────────────────────────────────────────────────────

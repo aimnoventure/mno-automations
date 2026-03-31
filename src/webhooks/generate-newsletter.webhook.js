@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { getBrandById } from "../brands/index.js";
 import { validateWebhookSignature } from "../utils/validate-webhook.js";
-import { getItemById, updateItemColumns } from "../services/monday.service.js";
+import { getItemById, updateItemColumns, getBoardColumns } from "../services/monday.service.js";
 import { generateNewsletterContent, scrapeBlogArticles } from "../services/ai.service.js";
 import { buildFormattedTemplate } from "../utils/format-newsletter-template.js";
 
@@ -68,7 +68,22 @@ async function runPipeline(event, brand) {
 
   console.log(`[newsletter] Starting pipeline for item ${pulseId} (board ${boardId})`);
 
-  // Stage 1: Fetch full Monday item
+  // Stage 1a: Resolve the "Output" column ID from the newsletter board
+  let outputColumnId;
+  try {
+    const boardColumns = await getBoardColumns(brand.newsletter.boardId, brand.monday.apiKey);
+    const outputCol = boardColumns.find((c) => c.title === "Output");
+    if (outputCol) {
+      outputColumnId = outputCol.id;
+      console.log(`[newsletter] Resolved "Output" column ID: ${outputColumnId}`);
+    } else {
+      console.warn('[newsletter] "Output" column not found on board — will skip output column update');
+    }
+  } catch (err) {
+    console.warn("[newsletter] Could not fetch board columns:", err.message);
+  }
+
+  // Stage 1b: Fetch full Monday item
   let item;
   try {
     item = await getItemById(pulseId, brand.monday.apiKey);
@@ -124,11 +139,12 @@ async function runPipeline(event, brand) {
   const payload = buildCampaignPayload(combined, columnValues, item.name, brand);
 
   // Stage 7: Write payload to file (Campaign Monitor integration pending)
+  const formattedTemplate = buildFormattedTemplate(payload);
   try {
     const outputDir = path.resolve("output");
     await fs.mkdir(outputDir, { recursive: true });
     const templateFilename = path.join(outputDir, `newsletter-template-${pulseId}-${Date.now()}.txt`);
-    await fs.writeFile(templateFilename, buildFormattedTemplate(payload), "utf8");
+    await fs.writeFile(templateFilename, formattedTemplate, "utf8");
     console.log(`[newsletter] Template written to ${templateFilename}`);
   } catch (err) {
     console.error("[newsletter] Failed to write payload file:", err.message);
@@ -136,15 +152,19 @@ async function runPipeline(event, brand) {
     return;
   }
 
-  // Stage 8: Update Monday item status
+  // Stage 8: Update Monday item — Output column + status in one call
   try {
-    await updateItemColumns(
-      boardId,
-      pulseId,
-      { status: { label: brand.newsletter.statusLabels.campaignCreated } },
-      brand.monday.apiKey
-    );
+    const columnUpdates = {
+      status: { label: brand.newsletter.statusLabels.campaignCreated },
+    };
+    if (outputColumnId) {
+      columnUpdates[outputColumnId] = { text: formattedTemplate };
+    }
+    await updateItemColumns(boardId, pulseId, columnUpdates, brand.monday.apiKey);
     console.log(`[newsletter] Monday item ${pulseId} updated to "${brand.newsletter.statusLabels.campaignCreated}"`);
+    if (outputColumnId) {
+      console.log(`[newsletter] Output column updated for item ${pulseId}`);
+    }
   } catch (err) {
     console.error(`[newsletter] Monday status update failed for item ${pulseId}:`, err.message);
   }

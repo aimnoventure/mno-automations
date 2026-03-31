@@ -204,16 +204,17 @@ Return ONLY the valid JSON object with no additional text, explanations, or comm
       emailDirection:    1,   // text_mm0a4cx3  — "Email Direction/Prompt"
       additionalSources: 2,   // text_mky8g6x6  — "Source (optional)"
       status:            3,   // status         — trigger column
-      emailSubject:      4,   // text_mm09rqhs  — "Email Subject"
-      fromName:          5,   // text_mm09yb9q  — "Email From Name"
-      fromEmail:         6,   // text_mm09dpm6  — "Email From Email Address"
-      bannerLink:        7,   // link_mm095jv5  — "Banner Link"
-      featureImage1:     8,   // link_mm09hvr4  — "Feature Card Image 1"
-      featureImage2:     9,   // link_mm097dap  — "Feature Card Image 2"
-      featureImage3:     10,  // link_mm097nc   — "Feature Card Image 3"
-      videoThumbnail:    11,  // link_mm0939w7  — "Featured Video Thumbnail Link"
-      logo:              12,  // link_mm09vqjt  — "Logo"
-      tokenUsed:         13,  // numeric_mky1snpf — "Token Used"
+      output:            4,   // long_text      — "Output" (resolved dynamically by title)
+      emailSubject:      5,   // text_mm09rqhs  — "Email Subject"
+      fromName:          6,   // text_mm09yb9q  — "Email From Name"
+      fromEmail:         7,   // text_mm09dpm6  — "Email From Email Address"
+      bannerLink:        8,   // link_mm095jv5  — "Banner Link"
+      featureImage1:     9,   // link_mm09hvr4  — "Feature Card Image 1"
+      featureImage2:     10,  // link_mm097dap  — "Feature Card Image 2"
+      featureImage3:     11,  // link_mm097nc   — "Feature Card Image 3"
+      videoThumbnail:    12,  // link_mm0939w7  — "Featured Video Thumbnail Link"
+      logo:              13,  // link_mm09vqjt  — "Logo"
+      tokenUsed:         14,  // numeric_mky1snpf — "Token Used"
     },
 
     statusLabels: {

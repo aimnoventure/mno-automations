@@ -121,6 +121,48 @@ export async function createBoardItem(boardId, groupId, name, columnValues, apiK
   return response.data?.data?.create_item;
 }
 
+/**
+ * Fetches all columns for a Monday.com board, returning their id, title, and type.
+ * Used to dynamically resolve column IDs by title (e.g. "Output").
+ *
+ * @param {string|number} boardId - The Monday board ID
+ * @param {string} apiKey - Monday.com API token
+ * @returns {Promise<Array<{id: string, title: string, type: string}>>}
+ */
+export async function getBoardColumns(boardId, apiKey) {
+  const query = `
+    query {
+      boards(ids: [${boardId}]) {
+        columns {
+          id
+          title
+          type
+        }
+      }
+    }
+  `;
+
+  const response = await axios.post(
+    MONDAY_API_URL,
+    { query },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: apiKey,
+      },
+      timeout: TIMEOUT_MS,
+    }
+  );
+
+  if (response.data.errors) {
+    throw new Error(
+      `Monday API errors in getBoardColumns: ${JSON.stringify(response.data.errors)}`
+    );
+  }
+
+  return response.data?.data?.boards?.[0]?.columns || [];
+}
+
 export async function updateItemColumns(boardId, itemId, columnValues, apiKey) {
   // Monday requires column_values to be a JSON string embedded as a GraphQL string literal.
   // JSON.stringify(columnValues) → JSON string
