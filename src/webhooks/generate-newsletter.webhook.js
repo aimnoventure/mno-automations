@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { getBrandById } from "../brands/index.js";
 import { validateWebhookSignature } from "../utils/validate-webhook.js";
-import { getItemById, updateItemColumns, getBoardColumns } from "../services/monday.service.js";
+import { getItemById, updateItemColumns } from "../services/monday.service.js";
 import { generateNewsletterContent, scrapeBlogArticles } from "../services/ai.service.js";
 import { buildFormattedTemplate } from "../utils/format-newsletter-template.js";
 
@@ -68,22 +68,7 @@ async function runPipeline(event, brand) {
 
   console.log(`[newsletter] Starting pipeline for item ${pulseId} (board ${boardId})`);
 
-  // Stage 1a: Resolve the "Output" column ID from the newsletter board
-  let outputColumnId;
-  try {
-    const boardColumns = await getBoardColumns(brand.newsletter.boardId, brand.monday.apiKey);
-    const outputCol = boardColumns.find((c) => c.title === "Output");
-    if (outputCol) {
-      outputColumnId = outputCol.id;
-      console.log(`[newsletter] Resolved "Output" column ID: ${outputColumnId}`);
-    } else {
-      console.warn('[newsletter] "Output" column not found on board — will skip output column update');
-    }
-  } catch (err) {
-    console.warn("[newsletter] Could not fetch board columns:", err.message);
-  }
-
-  // Stage 1b: Fetch full Monday item
+  // Stage 1: Fetch full Monday item
   let item;
   try {
     item = await getItemById(pulseId, brand.monday.apiKey);
@@ -93,6 +78,8 @@ async function runPipeline(event, brand) {
   }
 
   const columnValues = item.column_values;
+  // Resolve Output column ID directly from the item — no extra API call needed
+  const outputColumnId = columnValues[cols.output]?.id || null;
   const topic = item.name || "Generate newsletter topic based on current NDIS news";
   const emailDirection = columnValues[cols.emailDirection]?.text || "";
   const additionalSources = columnValues[cols.additionalSources]?.text || "";
