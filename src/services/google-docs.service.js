@@ -25,12 +25,17 @@ export async function createNewsletterDoc(title, content, googleDocsConfig) {
   const docs  = google.docs({ version: "v1", auth });
   const drive = google.drive({ version: "v3", auth });
 
-  // Create an empty Google Doc
-  const createResponse = await docs.documents.create({
-    requestBody: { title },
+  // Create the doc directly inside the target folder — no move step needed
+  const createResponse = await drive.files.create({
+    requestBody: {
+      name: title,
+      mimeType: "application/vnd.google-apps.document",
+      parents: [folderId],
+    },
+    fields: "id",
   });
 
-  const documentId = createResponse.data.documentId;
+  const documentId = createResponse.data.id;
 
   // Insert the plain-text content
   await docs.documents.batchUpdate({
@@ -45,21 +50,6 @@ export async function createNewsletterDoc(title, content, googleDocsConfig) {
         },
       ],
     },
-  });
-
-  // Move the doc into the target Drive folder
-  const file = await drive.files.get({
-    fileId: documentId,
-    fields: "parents",
-  });
-
-  const previousParents = file.data.parents.join(",");
-
-  await drive.files.update({
-    fileId: documentId,
-    addParents: folderId,
-    removeParents: previousParents,
-    fields: "id, parents",
   });
 
   return `https://docs.google.com/document/d/${documentId}/edit`;
