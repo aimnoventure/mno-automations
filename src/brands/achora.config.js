@@ -222,6 +222,13 @@ Return ONLY the valid JSON object with no additional text, explanations, or comm
       generationFailed: "Generation Failed",
     },
 
+    googleDocs: {
+      folderId:    process.env.GOOGLE_DRIVE_NEWSLETTER_FOLDER_ID_ACHORA,
+      credentials: process.env.GOOGLE_SERVICE_ACCOUNT_JSON
+        ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON)
+        : null,
+    },
+
     campaignMonitor: {
       apiKey:        process.env.CAMPAIGN_MONITOR_API_KEY_ACHORA,
       clientId:      "f77f17ad4a820cf7294b34b719f574cb",

@@ -3,6 +3,7 @@ import { validateWebhookSignature } from "../utils/validate-webhook.js";
 import { getItemById, updateItemColumns } from "../services/monday.service.js";
 import { generateNewsletterContent, scrapeBlogArticles } from "../services/ai.service.js";
 import { buildFormattedTemplate } from "../utils/format-newsletter-template.js";
+import { createNewsletterDoc } from "../services/google-docs.service.js";
 
 /**
  * Express route handler for POST /webhooks/:brandId/generate-newsletter.
@@ -126,18 +127,27 @@ async function runPipeline(event, brand) {
   // Stage 7: Build formatted template
   const formattedTemplate = buildFormattedTemplate(payload);
 
-  // Stage 8: Update Monday item — Output column + status in one call
+  // Stage 8: Create Google Doc and get its URL
+  let docUrl = null;
+  try {
+    docUrl = await createNewsletterDoc(item.name, formattedTemplate, brand.newsletter.googleDocs);
+    console.log(`[newsletter] Google Doc created for item ${pulseId}: ${docUrl}`);
+  } catch (err) {
+    console.error("[newsletter] Failed to create Google Doc:", err.message);
+  }
+
+  // Stage 9: Update Monday item — Output column (doc URL) + status in one call
   try {
     const columnUpdates = {
       status: { label: brand.newsletter.statusLabels.campaignCreated },
     };
-    if (outputColumnId) {
-      columnUpdates[outputColumnId] = formattedTemplate;
+    if (outputColumnId && docUrl) {
+      columnUpdates[outputColumnId] = docUrl;
     }
     await updateItemColumns(boardId, pulseId, columnUpdates, brand.monday.apiKey);
     console.log(`[newsletter] Monday item ${pulseId} updated to "${brand.newsletter.statusLabels.campaignCreated}"`);
-    if (outputColumnId) {
-      console.log(`[newsletter] Output column updated for item ${pulseId}`);
+    if (outputColumnId && docUrl) {
+      console.log(`[newsletter] Output column set to Google Doc URL for item ${pulseId}`);
     }
   } catch (err) {
     console.error(`[newsletter] Monday status update failed for item ${pulseId}:`, err.message);

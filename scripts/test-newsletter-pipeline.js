@@ -23,6 +23,7 @@ import { getBrandById } from "../src/brands/index.js";
 import { generateNewsletterContent, scrapeBlogArticles } from "../src/services/ai.service.js";
 import { buildCampaignPayload } from "../src/webhooks/generate-newsletter.webhook.js";
 import { buildFormattedTemplate } from "../src/utils/format-newsletter-template.js";
+import { createNewsletterDoc } from "../src/services/google-docs.service.js";
 
 // ── Parse CLI args ─────────────────────────────────────────────────────────────
 
@@ -131,15 +132,29 @@ const payload = buildCampaignPayload(combined, DUMMY_COLUMN_VALUES, TEST_ITEM_NA
 console.log("[test] Stage 3 complete.");
 console.log();
 
-// Stage 5: Write template to file
-const outputDir        = path.resolve("output");
-const templateFilename = path.join(outputDir, `newsletter-template-${Date.now()}.txt`);
+// Stage 5: Build formatted template + write local copy
+const formattedTemplate = buildFormattedTemplate(payload);
+const outputDir         = path.resolve("output");
+const templateFilename  = path.join(outputDir, `newsletter-template-${Date.now()}.txt`);
 
 await fs.mkdir(outputDir, { recursive: true });
-await fs.writeFile(templateFilename, buildFormattedTemplate(payload), "utf8");
+await fs.writeFile(templateFilename, formattedTemplate, "utf8");
+
+// Stage 6: Create Google Doc
+console.log("[test] Stage 4 — Creating Google Doc...");
+let docUrl = null;
+try {
+  docUrl = await createNewsletterDoc(TEST_ITEM_NAME, formattedTemplate, brand.newsletter.googleDocs);
+  console.log("[test] Stage 4 complete.");
+} catch (err) {
+  console.error("[test] Stage 4 FAILED (Google Doc):", err.message);
+}
 
 console.log("── Output ────────────────────────────────────────────────");
 console.log(`  Template written to : ${templateFilename}`);
+if (docUrl) {
+  console.log(`  Google Doc URL      : ${docUrl}`);
+}
 console.log("─────────────────────────────────────────────────────────");
 console.log();
 console.log("[test] Done.");
