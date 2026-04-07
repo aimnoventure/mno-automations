@@ -1,7 +1,7 @@
 import { getBrandById } from "../brands/index.js";
 import { validateWebhookSignature } from "../utils/validate-webhook.js";
 import { getItemById, updateItemColumns } from "../services/monday.service.js";
-import { generateNewsletterContent, scrapeBlogArticles } from "../services/ai.service.js";
+import { generateAllNewsletterVersions, scrapeBlogArticles } from "../services/ai.service.js";
 import { buildFormattedTemplate } from "../utils/format-newsletter-template.js";
 import { createNewsletterDoc } from "../services/google-docs.service.js";
 
@@ -77,8 +77,6 @@ async function runPipeline(event, brand) {
   }
 
   const columnValues = item.column_values;
-  // Resolve Output column ID directly from the item — no extra API call needed
-  const outputColumnId = columnValues[cols.output]?.id || null;
   const topic = item.name || "Generate newsletter topic based on current NDIS news";
   const emailDirection = columnValues[cols.emailDirection]?.text || "";
   const additionalSources = columnValues[cols.additionalSources]?.text || "";
@@ -96,61 +94,73 @@ async function runPipeline(event, brand) {
 **Month:** ${month}
 **Year:** ${year}`;
 
-  // Stage 3: Generate newsletter content via AI
-  let newsletterContent;
+  // Stage 3: Generate all 3 AI versions + scrape blog articles in parallel
+  let versions, blogData;
   try {
-    newsletterContent = await generateNewsletterContent(userPrompt, brand);
-    console.log(`[newsletter] AI content generated for item ${pulseId}`);
+    [versions, blogData] = await Promise.all([
+      generateAllNewsletterVersions(userPrompt, brand),
+      scrapeBlogArticles(brand.newsletter.blogUrl),
+    ]);
+    console.log(`[newsletter] AI versions generated and blog scraped for item ${pulseId}`);
   } catch (err) {
-    console.error("[newsletter] AI generation failed:", err.message);
+    console.error("[newsletter] Generation/scraping failed:", err.message);
     await safeUpdateStatus(boardId, pulseId, brand.newsletter.statusLabels.generationFailed, brand);
     return;
   }
 
-  // Stage 4: Scrape real blog articles from Achora website
-  let blogData;
-  try {
-    blogData = await scrapeBlogArticles(brand.newsletter.blogUrl);
-    console.log(`[newsletter] Blog articles scraped for item ${pulseId}`);
-  } catch (err) {
-    console.error("[newsletter] Blog scraping failed:", err.message);
-    await safeUpdateStatus(boardId, pulseId, brand.newsletter.statusLabels.generationFailed, brand);
-    return;
+  // Stage 4: Build a formatted template for each successful version
+  const colIds = brand.newsletter.columnIds;
+
+  function buildTemplate(content, label) {
+    if (!content) {
+      console.warn(`[newsletter] Skipping ${label} — content generation failed`);
+      return null;
+    }
+    const combined = { ...content, ...blogData };
+    const payload  = buildCampaignPayload(combined, columnValues, item.name, brand);
+    return buildFormattedTemplate(payload);
   }
 
-  // Stage 5: Merge — real blog articles override AI-generated placeholders
-  const combined = { ...newsletterContent, ...blogData };
+  const openaiTemplate = buildTemplate(versions.openai, "OpenAI");
+  const claudeTemplate = buildTemplate(versions.claude, "Claude");
+  const geminiTemplate = buildTemplate(versions.gemini, "Gemini");
 
-  // Stage 6: Build Campaign Monitor payload
-  const payload = buildCampaignPayload(combined, columnValues, item.name, brand);
-
-  // Stage 7: Build formatted template
-  const formattedTemplate = buildFormattedTemplate(payload);
-
-  // Stage 8: Create Google Doc and get its URL
-  let docUrl = null;
-  try {
-    docUrl = await createNewsletterDoc(item.name, formattedTemplate, brand.newsletter.googleDocs);
-    console.log(`[newsletter] Google Doc created for item ${pulseId}: ${docUrl}`);
-  } catch (err) {
-    console.error("[newsletter] Failed to create Google Doc:", err.message);
+  // Stage 5: Create Google Docs for all 3 versions in parallel
+  async function createDoc(template, label) {
+    if (!template) return null;
+    try {
+      const url = await createNewsletterDoc(
+        `${item.name} — ${label}`,
+        template,
+        brand.newsletter.googleDocs
+      );
+      console.log(`[newsletter] ${label} Google Doc created: ${url}`);
+      return url;
+    } catch (err) {
+      console.error(`[newsletter] Failed to create ${label} Google Doc:`, err.message);
+      return null;
+    }
   }
 
-  // Stage 9: Update Monday item — Output column (doc URL) + status in one call
+  const [openaiUrl, claudeUrl, geminiUrl] = await Promise.all([
+    createDoc(openaiTemplate, "OpenAI"),
+    createDoc(claudeTemplate, "Claude"),
+    createDoc(geminiTemplate, "Gemini"),
+  ]);
+
+  // Stage 6: Update Monday — all 3 output columns + status in one call
   try {
     const columnUpdates = {
       status: { label: brand.newsletter.statusLabels.campaignCreated },
     };
-    if (outputColumnId && docUrl) {
-      columnUpdates[outputColumnId] = docUrl;
-    }
+    if (openaiUrl) columnUpdates[colIds.openai] = openaiUrl;
+    if (claudeUrl) columnUpdates[colIds.claude] = claudeUrl;
+    if (geminiUrl) columnUpdates[colIds.gemini] = geminiUrl;
+
     await updateItemColumns(boardId, pulseId, columnUpdates, brand.monday.apiKey);
-    console.log(`[newsletter] Monday item ${pulseId} updated to "${brand.newsletter.statusLabels.campaignCreated}"`);
-    if (outputColumnId && docUrl) {
-      console.log(`[newsletter] Output column set to Google Doc URL for item ${pulseId}`);
-    }
+    console.log(`[newsletter] Monday item ${pulseId} updated — OpenAI: ${!!openaiUrl}, Claude: ${!!claudeUrl}, Gemini: ${!!geminiUrl}`);
   } catch (err) {
-    console.error(`[newsletter] Monday status update failed for item ${pulseId}:`, err.message);
+    console.error(`[newsletter] Monday update failed for item ${pulseId}:`, err.message);
   }
 }
 

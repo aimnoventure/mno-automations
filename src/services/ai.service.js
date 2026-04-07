@@ -309,6 +309,55 @@ export async function generateNewsletterContent(userPrompt, brand) {
 }
 
 /**
+ * Generates newsletter content using all three AI models in parallel,
+ * sharing a single RAG context fetch across all three calls.
+ *
+ * @param {string} userPrompt - Built prompt containing topic, email direction, month, year
+ * @param {Object} brand - Full brand config
+ * @returns {Promise<{ openai: Object, claude: Object, gemini: Object }>}
+ *   Each value is the parsed newsletter content object, or null if that model failed.
+ */
+export async function generateAllNewsletterVersions(userPrompt, brand) {
+  const ragContext = await getRagContext(userPrompt, brand.rag);
+  const { systemPrompt } = brand.newsletter.ai;
+
+  async function withOpenAI() {
+    let raw = await callOpenAI(systemPrompt, userPrompt, ragContext, []);
+    raw = await cleanJsonWithGpt(raw);
+    return parseAiResponse(raw);
+  }
+
+  async function withClaude() {
+    const raw = await callClaude(systemPrompt, userPrompt, ragContext, []);
+    return parseAiResponse(raw);
+  }
+
+  async function withGemini() {
+    let raw = await callGemini(systemPrompt, userPrompt, ragContext, []);
+    raw = await cleanJsonWithGpt(raw);
+    return parseAiResponse(raw);
+  }
+
+  const [openaiResult, claudeResult, geminiResult] = await Promise.allSettled([
+    withOpenAI(),
+    withClaude(),
+    withGemini(),
+  ]);
+
+  const extract = (result, label) => {
+    if (result.status === "fulfilled") return result.value;
+    console.error(`[newsletter] ${label} generation failed:`, result.reason?.message);
+    return null;
+  };
+
+  return {
+    openai: extract(openaiResult, "OpenAI"),
+    claude: extract(claudeResult, "Claude"),
+    gemini: extract(geminiResult, "Gemini"),
+  };
+}
+
+/**
  * Fetches the Achora blog page, strips HTML tags to plain text, then calls
  * OpenAI to extract the 2 most recent blog articles (title, description, url).
  *

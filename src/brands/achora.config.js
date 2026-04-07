@@ -200,21 +200,33 @@ Return ONLY the valid JSON object with no additional text, explanations, or comm
     blogUrl: "https://www.achora.com.au/blog/",
     webhookSecret: process.env.MONDAY_NEWSLETTER_WEBHOOK_SECRET_ACHORA,
 
+    // Array indices for reading column_values from getItemById
     columns: {
       emailDirection:    1,   // text_mm0a4cx3  — "Email Direction/Prompt"
       additionalSources: 2,   // text_mky8g6x6  — "Source (optional)"
       status:            3,   // status         — trigger column
-      output:            4,   // long_text      — "Output" (resolved dynamically by title)
-      emailSubject:      5,   // text_mm09rqhs  — "Email Subject"
-      fromName:          6,   // text_mm09yb9q  — "Email From Name"
-      fromEmail:         7,   // text_mm09dpm6  — "Email From Email Address"
-      bannerLink:        8,   // link_mm095jv5  — "Banner Link"
-      featureImage1:     9,   // link_mm09hvr4  — "Feature Card Image 1"
-      featureImage2:     10,  // link_mm097dap  — "Feature Card Image 2"
-      featureImage3:     11,  // link_mm097nc   — "Feature Card Image 3"
-      videoThumbnail:    12,  // link_mm0939w7  — "Featured Video Thumbnail Link"
-      logo:              13,  // link_mm09vqjt  — "Logo"
-      tokenUsed:         14,  // numeric_mky1snpf — "Token Used"
+      output:            4,   // text_mm1zph5c  — "Output"
+      openaiOutput:      5,   // text_mm267dnh  — "OpenAI Output"
+      claudeOutput:      6,   // text_mm26wd7v  — "Claude Output"
+      geminiOutput:      7,   // text_mm26gf46  — "Gemini Output"
+      emailSubject:      8,   // text_mm09rqhs  — "Email Subject"
+      fromName:          9,   // text_mm09yb9q  — "Email From Name"
+      fromEmail:         10,  // text_mm09dpm6  — "Email From Email Address"
+      bannerLink:        11,  // link_mm095jv5  — "Banner Link"
+      featureImage1:     12,  // link_mm09hvr4  — "Feature Card Image 1"
+      featureImage2:     13,  // link_mm097dap  — "Feature Card Image 2"
+      featureImage3:     14,  // link_mm097nc   — "Feature Card Image 3"
+      videoThumbnail:    15,  // link_mm0939w7  — "Featured Video Thumbnail Link"
+      logo:              16,  // link_mm09vqjt  — "Logo"
+      tokenUsed:         17,  // numeric_mky1snpf — "Token Used"
+    },
+
+    // Column IDs for writing results back to Monday (used in updateItemColumns)
+    columnIds: {
+      output:      "text_mm1zph5c",
+      openai:      "text_mm267dnh",
+      claude:      "text_mm26wd7v",
+      gemini:      "text_mm26gf46",
     },
 
     statusLabels: {

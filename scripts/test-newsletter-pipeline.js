@@ -13,14 +13,12 @@
  *   node scripts/test-newsletter-pipeline.js achora
  *
  * Output:
- *   Writes the full Campaign Monitor payload to output/newsletter-test-{timestamp}.txt
+ *   Creates three Google Docs (OpenAI, Claude, Gemini versions) and prints their URLs.
  */
 
 import "dotenv/config";
-import fs from "fs/promises";
-import path from "path";
 import { getBrandById } from "../src/brands/index.js";
-import { generateNewsletterContent, scrapeBlogArticles } from "../src/services/ai.service.js";
+import { generateAllNewsletterVersions, scrapeBlogArticles } from "../src/services/ai.service.js";
 import { buildCampaignPayload } from "../src/webhooks/generate-newsletter.webhook.js";
 import { buildFormattedTemplate } from "../src/utils/format-newsletter-template.js";
 import { createNewsletterDoc } from "../src/services/google-docs.service.js";
@@ -42,17 +40,20 @@ const DUMMY_COLUMN_VALUES = [
   { text: TEST_DIRECTION },         // 1: Email Direction/Prompt
   { text: "" },                     // 2: Source (optional)
   { text: "Generate Content" },     // 3: Status
-  { text: "" },                     // 4: Output (written by pipeline, not read)
-  { text: "Your NDIS Plan Review: What You Need to Know" },  // 5: Email Subject
-  { text: "Achora" },               // 6: From Name
-  { text: "admin@achora.com.au" },  // 7: From Email
-  { text: "" },                     // 8: Banner Link (blank → uses default image)
-  { text: "" },                     // 9: Feature Card Image 1
-  { text: "" },                     // 10: Feature Card Image 2
-  { text: "" },                     // 11: Feature Card Image 3
-  { text: "" },                     // 12: Featured Video Thumbnail
-  { text: "" },                     // 13: Logo
-  { text: "" },                     // 14: Token Used
+  { text: "" },                     // 4: Output (written by pipeline)
+  { text: "" },                     // 5: OpenAI Output (written by pipeline)
+  { text: "" },                     // 6: Claude Output (written by pipeline)
+  { text: "" },                     // 7: Gemini Output (written by pipeline)
+  { text: "Your NDIS Plan Review: What You Need to Know" },  // 8: Email Subject
+  { text: "Achora" },               // 9: From Name
+  { text: "admin@achora.com.au" },  // 10: From Email
+  { text: "" },                     // 11: Banner Link (blank → uses default image)
+  { text: "" },                     // 12: Feature Card Image 1
+  { text: "" },                     // 13: Feature Card Image 2
+  { text: "" },                     // 14: Feature Card Image 3
+  { text: "" },                     // 15: Featured Video Thumbnail
+  { text: "" },                     // 16: Logo
+  { text: "" },                     // 17: Token Used
 ];
 
 // ── Run ────────────────────────────────────────────────────────────────────────
@@ -83,20 +84,28 @@ const userPrompt = `Generate newsletter content for Achora's scheduled email.
 **Month:** ${month}
 **Year:** ${year}`;
 
-// Stage 1: AI newsletter content generation
-console.log("[test] Stage 1 — Generating newsletter content via AI...");
-let newsletterContent;
+// Stage 1: Generate all 3 AI versions + scrape blog articles in parallel
+console.log("[test] Stage 1 — Generating all AI versions + scraping blog articles...");
+let versions, blogData;
 try {
-  newsletterContent = await generateNewsletterContent(userPrompt, brand);
+  [versions, blogData] = await Promise.all([
+    generateAllNewsletterVersions(userPrompt, brand),
+    scrapeBlogArticles(brand.newsletter.blogUrl),
+  ]);
   console.log("[test] Stage 1 complete.");
   console.log();
-  console.log("── Newsletter content summary ────────────────────────────");
-  console.log(`  Hero tagline     : ${newsletterContent.hero_tagline}`);
-  console.log(`  Greeting         : ${newsletterContent.greeting}`);
-  console.log(`  Seasonal message : ${newsletterContent.seasonal_message}`);
-  console.log(`  Section 1        : ${newsletterContent.section1?.heading}`);
-  console.log(`  Section 2        : ${newsletterContent.section2?.heading}`);
-  console.log(`  Section 3        : ${newsletterContent.section3?.heading}`);
+  console.log("── AI Versions ───────────────────────────────────────────");
+  for (const [label, content] of [["OpenAI", versions.openai], ["Claude", versions.claude], ["Gemini", versions.gemini]]) {
+    if (content) {
+      console.log(`  ${label}: ${content.section1?.heading}`);
+    } else {
+      console.log(`  ${label}: FAILED`);
+    }
+  }
+  console.log("── Scraped blog articles ─────────────────────────────────");
+  (blogData.blog_articles || []).forEach((a, i) => {
+    console.log(`  [${i + 1}] ${a.title}`);
+  });
   console.log("─────────────────────────────────────────────────────────");
   console.log();
 } catch (err) {
@@ -104,56 +113,45 @@ try {
   process.exit(1);
 }
 
-// Stage 2: Scrape real blog articles from Achora website
-console.log("[test] Stage 2 — Scraping blog articles from Achora website...");
-let blogData;
-try {
-  blogData = await scrapeBlogArticles(brand.newsletter.blogUrl);
-  console.log("[test] Stage 2 complete.");
-  console.log();
-  console.log("── Scraped blog articles ─────────────────────────────────");
-  (blogData.blog_articles || []).forEach((a, i) => {
-    console.log(`  [${i + 1}] ${a.title}`);
-    console.log(`      ${a.url}`);
-  });
-  console.log("─────────────────────────────────────────────────────────");
-  console.log();
-} catch (err) {
-  console.error("[test] Stage 2 FAILED:", err.message);
-  process.exit(1);
+// Stage 2: Build payloads + formatted templates for each version
+console.log("[test] Stage 2 — Building payloads and templates...");
+
+function buildTemplate(content) {
+  if (!content) return null;
+  const combined = { ...content, ...blogData };
+  const payload  = buildCampaignPayload(combined, DUMMY_COLUMN_VALUES, TEST_ITEM_NAME, brand);
+  return buildFormattedTemplate(payload);
 }
 
-// Stage 3: Merge outputs
-const combined = { ...newsletterContent, ...blogData };
+const templates = {
+  openai: buildTemplate(versions.openai),
+  claude: buildTemplate(versions.claude),
+  gemini: buildTemplate(versions.gemini),
+};
 
-// Stage 4: Build Campaign Monitor payload
-console.log("[test] Stage 3 — Building Campaign Monitor payload...");
-const payload = buildCampaignPayload(combined, DUMMY_COLUMN_VALUES, TEST_ITEM_NAME, brand);
-console.log("[test] Stage 3 complete.");
+// Stage 3: Create Google Docs for all 3 versions in parallel
+console.log("[test] Stage 3 — Creating Google Docs...");
+const docResults = await Promise.allSettled(
+  Object.entries(templates).map(async ([label, template]) => {
+    if (!template) return [label, null];
+    const url = await createNewsletterDoc(
+      `${TEST_ITEM_NAME} — ${label.charAt(0).toUpperCase() + label.slice(1)}`,
+      template,
+      brand.newsletter.googleDocs
+    );
+    return [label, url];
+  })
+);
+
 console.log();
-
-// Stage 5: Build formatted template + write local copy
-const formattedTemplate = buildFormattedTemplate(payload);
-const outputDir         = path.resolve("output");
-const templateFilename  = path.join(outputDir, `newsletter-template-${Date.now()}.txt`);
-
-await fs.mkdir(outputDir, { recursive: true });
-await fs.writeFile(templateFilename, formattedTemplate, "utf8");
-
-// Stage 6: Create Google Doc
-console.log("[test] Stage 4 — Creating Google Doc...");
-let docUrl = null;
-try {
-  docUrl = await createNewsletterDoc(TEST_ITEM_NAME, formattedTemplate, brand.newsletter.googleDocs);
-  console.log("[test] Stage 4 complete.");
-} catch (err) {
-  console.error("[test] Stage 4 FAILED (Google Doc):", err.message);
-}
-
 console.log("── Output ────────────────────────────────────────────────");
-console.log(`  Template written to : ${templateFilename}`);
-if (docUrl) {
-  console.log(`  Google Doc URL      : ${docUrl}`);
+for (const result of docResults) {
+  if (result.status === "fulfilled") {
+    const [label, url] = result.value;
+    console.log(`  ${label.padEnd(8)}: ${url || "FAILED"}`);
+  } else {
+    console.error(`  FAILED: ${result.reason?.message}`);
+  }
 }
 console.log("─────────────────────────────────────────────────────────");
 console.log();
