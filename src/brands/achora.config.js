@@ -223,10 +223,10 @@ Return ONLY the valid JSON object with no additional text, explanations, or comm
     },
 
     googleDocs: {
-      folderId:    process.env.GOOGLE_DRIVE_NEWSLETTER_FOLDER_ID_ACHORA,
-      credentials: process.env.GOOGLE_SERVICE_ACCOUNT_JSON
-        ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON)
-        : null,
+      folderId:     process.env.GOOGLE_DRIVE_NEWSLETTER_FOLDER_ID_ACHORA,
+      clientId:     process.env.GOOGLE_OAUTH_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+      refreshToken: process.env.GOOGLE_OAUTH_REFRESH_TOKEN,
     },
 
     campaignMonitor: {

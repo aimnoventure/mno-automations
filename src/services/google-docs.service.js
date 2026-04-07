@@ -2,36 +2,38 @@ import { google } from "googleapis";
 
 /**
  * Creates a Google Doc with the given title and plain-text content,
- * places it in the specified Drive folder, and returns its public URL.
+ * places it in the specified Drive folder, and returns the doc URL.
+ * Authenticates as the folder owner via OAuth2 refresh token so files
+ * count against the owner's Drive quota (not a service account).
  *
  * @param {string} title - Document title (used as the Google Doc name)
  * @param {string} content - Plain-text body to insert into the document
  * @param {Object} googleDocsConfig - From brand.newsletter.googleDocs
- * @param {string} googleDocsConfig.folderId - Google Drive folder ID to place the doc in
- * @param {Object} googleDocsConfig.credentials - Parsed service account JSON key
+ * @param {string} googleDocsConfig.folderId     - Google Drive folder ID
+ * @param {string} googleDocsConfig.clientId     - OAuth2 Client ID
+ * @param {string} googleDocsConfig.clientSecret - OAuth2 Client Secret
+ * @param {string} googleDocsConfig.refreshToken - OAuth2 Refresh Token
  * @returns {Promise<string>} The Google Doc URL
  */
 export async function createNewsletterDoc(title, content, googleDocsConfig) {
-  const { folderId, credentials } = googleDocsConfig;
+  const { folderId, clientId, clientSecret, refreshToken } = googleDocsConfig;
 
   // Guard: catch missing config early with a clear message
-  if (!credentials) {
-    throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON is not set or failed to parse");
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error(
+      "GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, or GOOGLE_OAUTH_REFRESH_TOKEN is not set"
+    );
   }
   if (!folderId) {
     throw new Error("GOOGLE_DRIVE_NEWSLETTER_FOLDER_ID is not set");
   }
 
-  console.log(`[google-docs] Auth client_email: ${credentials.client_email}`);
-  console.log(`[google-docs] Target folder ID : ${folderId}`);
+  console.log(`[google-docs] Target folder ID: ${folderId}`);
 
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: [
-      "https://www.googleapis.com/auth/documents",
-      "https://www.googleapis.com/auth/drive",
-    ],
-  });
+  const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
+  oauth2Client.setCredentials({ refresh_token: refreshToken });
+
+  const auth = oauth2Client;
 
   const docs  = google.docs({ version: "v1", auth });
   const drive = google.drive({ version: "v3", auth });

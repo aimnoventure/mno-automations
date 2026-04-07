@@ -1,0 +1,128 @@
+====================================================
+ACHORA NEWSLETTER - EDITABLE CONTENT TEMPLATE
+====================================================
+ 
+Name: April 2026 Newsletter [1775586979491]
+ Subject: Your NDIS Plan Review: What You Need to Know
+ 
+----------------------------------------------------
+GREETING
+----------------------------------------------------
+ 
+Greeting:
+Hi, there!
+ 
+Opening Message:
+April inspirations
+
+As the autumn leaves fall, bringing change and reflection, it's the perfect time to review and refresh your NDIS plan. With the new year underway, a successful plan review can empower your journey forward.
+ 
+ 
+----------------------------------------------------
+PRIMARY CTA
+----------------------------------------------------
+ 
+CTA 1:
+Button Text: Contact Achora
+Link: https://achora.com.au/contact
+ 
+ 
+----------------------------------------------------
+FEATURE CARD 1 — Purple Card (Image Left)
+----------------------------------------------------
+ 
+Title:
+Ready for Your NDIS Plan Review?
+ 
+Description:
+Gather essential documents early
+Clarify current goals and outcomes
+List adjustments needed for success
+ 
+CTA:
+Button Text: Learn More
+Link: https://achora.com.au/plan-check
+ 
+ 
+----------------------------------------------------
+FEATURE CARD 2 — Teal Card (Image Right)
+----------------------------------------------------
+ 
+Title:
+Tips for a Successful Review
+ 
+Description (List):
+- Preparation: Begin planning months in advance
+- Communication: Keep clear records and notes
+- Support: Bring a trusted advocate or coordinator
+ 
+CTA:
+Button Text: Get Tips
+Link: https://achora.com.au/ndis-goals
+ 
+ 
+----------------------------------------------------
+FEATURE CARD 3 — Split Card (Yellow/White)
+----------------------------------------------------
+ 
+Title:
+Ultimate NDIS Review Checklist
+ 
+Description:
+Our checklist simplifies your preparation, ensuring nothing critical is overlooked. Gain peace of mind knowing you're thoroughly prepared for your meeting.
+ 
+CTA:
+Button Text: Download Now
+Link: https://achora.com.au/contact
+ 
+ 
+----------------------------------------------------
+FULL-WIDTH IMAGE + CAPTION
+----------------------------------------------------
+ 
+Caption:
+Working alongside our amazing participants teaches us that preparation is key to demystifying the NDIS plan review process and achieving desired outcomes.
+ 
+Image Link: #
+ 
+ 
+----------------------------------------------------
+SECTION HEADING
+----------------------------------------------------
+ 
+Heading:
+Interesting Reads:
+ 
+ 
+----------------------------------------------------
+BLOG CARD 1 — Teal Button
+----------------------------------------------------
+ 
+Title:
+Achora Blog | NDIS Support Resources
+ 
+Description:
+Explore NDIS Resources, expert insights, tips, disability support guidance and latest updates on plan management and support coordination.
+ 
+CTA:
+Button Text: Learn More
+Link: https://www.achora.com.au/blog/
+ 
+ 
+----------------------------------------------------
+BLOG CARD 2 — Yellow Button
+----------------------------------------------------
+ 
+Title:
+
+ 
+Description:
+
+ 
+CTA:
+Button Text: Read More
+Link: #
+ 
+====================================================
+END OF TEMPLATE
+====================================================
