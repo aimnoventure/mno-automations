@@ -118,7 +118,7 @@ async function runPipeline(event, brand) {
     }
     const combined = { ...content, ...blogData };
     const payload  = buildCampaignPayload(combined, columnValues, item.name, brand);
-    return buildFormattedTemplate(payload);
+    return buildFormattedTemplate(payload, label);
   }
 
   const openaiTemplate = buildTemplate(versions.openai, "OpenAI");

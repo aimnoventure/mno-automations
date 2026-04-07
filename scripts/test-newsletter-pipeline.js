@@ -116,17 +116,17 @@ try {
 // Stage 2: Build payloads + formatted templates for each version
 console.log("[test] Stage 2 — Building payloads and templates...");
 
-function buildTemplate(content) {
+function buildTemplate(content, label) {
   if (!content) return null;
   const combined = { ...content, ...blogData };
   const payload  = buildCampaignPayload(combined, DUMMY_COLUMN_VALUES, TEST_ITEM_NAME, brand);
-  return buildFormattedTemplate(payload);
+  return buildFormattedTemplate(payload, label);
 }
 
 const templates = {
-  openai: buildTemplate(versions.openai),
-  claude: buildTemplate(versions.claude),
-  gemini: buildTemplate(versions.gemini),
+  openai: buildTemplate(versions.openai, "OpenAI"),
+  claude: buildTemplate(versions.claude, "Claude"),
+  gemini: buildTemplate(versions.gemini, "Gemini"),
 };
 
 // Stage 3: Create Google Docs for all 3 versions in parallel

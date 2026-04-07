@@ -5,7 +5,7 @@
  * @param {Object} payload - The full CM payload produced by buildCampaignPayload()
  * @returns {string} Formatted template string
  */
-export function buildFormattedTemplate(payload) {
+export function buildFormattedTemplate(payload, model = null) {
   const tc   = payload.TemplateContent;
   const sl   = tc.Singlelines;
   const ml   = tc.Multilines;
@@ -48,9 +48,13 @@ export function buildFormattedTemplate(payload) {
   const sep  = "====================================================";
   const dash = "----------------------------------------------------";
 
+  const header = model
+    ? `ACHORA NEWSLETTER - ${model.toUpperCase()} VERSION`
+    : "ACHORA NEWSLETTER - EDITABLE CONTENT TEMPLATE";
+
   const lines = [
     sep,
-    "ACHORA NEWSLETTER - EDITABLE CONTENT TEMPLATE",
+    header,
     sep,
     " ",
     `Name: ${payload.Name}`,
