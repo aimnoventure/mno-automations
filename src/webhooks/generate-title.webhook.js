@@ -107,8 +107,24 @@ async function runTitlePipeline(event, brand) {
     `    { "title": "NDIS Plan Management vs Self-Management: Which Option Is Right for You?", "source": null, "source_type": "rag" }\n` +
     `  ]\n}`;
 
+  // motionContext controls whether generateBlogTitles appends the Motion task.
+  // Set to null when the branch already embeds it directly in chatInput.
+  let motionContext = motionTask;
   let chatInput;
-  if (topic.toLowerCase() === "latest ndis news") {
+  if (topic.toLowerCase() === "latest in motion inbox") {
+    if (!motionTask) {
+      console.error("[generate-title] Topic is 'Latest in Motion Inbox' but no Motion task was fetched — aborting");
+      await safeUpdateStatus(cfg.sourceBoardId, pulseId, cfg.statusLabels.failed, brand);
+      return;
+    }
+    motionContext = null; // already embedded below — don't append again inside generateBlogTitles
+    chatInput =
+      `Generate ${numberOfTitles} blog post titles for Australian-owned NDIS provider.\n\n` +
+      `Use ONLY the following Motion news item as your source. All titles must be Motion-sourced.\n\n` +
+      `[MOTION NEWS SOURCE]\nHeading: ${motionTask.name}\n${motionTask.description}\nPublished: ${motionTask.createdTime}\n\n` +
+      `# OUTPUT FORMAT\nThe format must be a valid json and remove conversational filler, pre-prompt statement, or introductory remark.\n\n` +
+      `Required JSON Format Sample:\n${jsonSample}`;
+  } else if (topic.toLowerCase() === "latest ndis news") {
     chatInput =
       `Generate ${numberOfTitles || 3} blog post titles for Australian-owned NDIS provider. ` +
       `Choose topics from the latest news posted in www.ndis.gov.au/news/.\n` +
@@ -126,7 +142,7 @@ async function runTitlePipeline(event, brand) {
   // Stage 5: Generate titles via AI
   let parsedOutput;
   try {
-    parsedOutput = await generateBlogTitles(chatInput, brand, motionTask);
+    parsedOutput = await generateBlogTitles(chatInput, brand, motionContext);
     console.log(`[generate-title] AI generated ${parsedOutput.blog_titles?.length ?? 0} titles for item ${pulseId}`);
   } catch (err) {
     console.error("[generate-title] AI generation failed:", err.message);
