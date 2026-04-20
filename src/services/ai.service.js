@@ -275,13 +275,19 @@ async function getWebsiteMetadata(ragConfig) {
  * @returns {Promise<Object>} Parsed titles object: { blog_titles: string[], metadata_check: {...} }
  * @throws {Error} If Supabase query, AI generation, or JSON parsing fails
  */
-export async function generateBlogTitles(chatInput, brand) {
+export async function generateBlogTitles(chatInput, brand, motionTask = null) {
   const websiteMetadata = await getWebsiteMetadata(brand.rag);
 
   const { systemPrompt } = brand.titleGeneration;
 
+  let fullInput = chatInput;
+  if (motionTask) {
+    fullInput +=
+      `\n\n[MOTION NEWS SOURCE]\nHeading: ${motionTask.name}\n${motionTask.description}\nPublished: ${motionTask.createdTime}`;
+  }
+
   // No RAG vector chunks needed — pass empty array; website_metadata fills the context slot
-  let rawOutput = await callOpenAI(systemPrompt, chatInput, [], websiteMetadata);
+  let rawOutput = await callOpenAI(systemPrompt, fullInput, [], websiteMetadata);
   rawOutput = await cleanJsonWithGpt(rawOutput);
 
   return parseAiResponse(rawOutput);

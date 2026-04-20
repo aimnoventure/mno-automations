@@ -2,6 +2,7 @@ import { getBrandById } from "../brands/index.js";
 import { validateWebhookSignature } from "../utils/validate-webhook.js";
 import { getItemById, createBoardItem, updateItemColumns } from "../services/monday.service.js";
 import { generateBlogTitles } from "../services/ai.service.js";
+import { getLatestMotionTask } from "../services/motion.service.js";
 
 /**
  * Express route handler for POST /webhooks/:brandId/generate-title.
@@ -84,7 +85,13 @@ async function runTitlePipeline(event, brand) {
     return;
   }
 
-  // Stage 2: Extract topic details from column values
+  // Stage 2: Fetch latest Motion task (non-blocking — null if unavailable)
+  const motionTask = await getLatestMotionTask(brand.motion);
+  if (motionTask) {
+    console.log(`[generate-title] Motion task fetched: "${motionTask.name}"`);
+  }
+
+  // Stage 3: Extract topic details from column values
   const columnValues = item.column_values;
   const topic = item.name;
   const numberOfTitles = parseInt(columnValues[cols.numberOfTitles]?.text, 10) || 5;
@@ -93,35 +100,33 @@ async function runTitlePipeline(event, brand) {
 
   console.log(`[generate-title] Topic: "${topic}", titles requested: ${numberOfTitles}`);
 
-  // Stage 3: Build chatInput (mirrors n8n "Topic is Latest NDIS news" / "Topic is specified" branch)
+  // Stage 4: Build chatInput
+  const jsonSample =
+    `{\n  "blog_titles": [\n` +
+    `    { "title": "Understanding Your NDIS Plan Management: A Complete Guide", "source": "https://example.com/article", "source_type": "motion" },\n` +
+    `    { "title": "NDIS Plan Management vs Self-Management: Which Option Is Right for You?", "source": null, "source_type": "rag" }\n` +
+    `  ]\n}`;
+
   let chatInput;
   if (topic.toLowerCase() === "latest ndis news") {
     chatInput =
-      `Generate ${numberOfTitles || 3} blog post title for Australian-owned NDIS provider. ` +
+      `Generate ${numberOfTitles || 3} blog post titles for Australian-owned NDIS provider. ` +
       `Choose topics from the latest news posted in www.ndis.gov.au/news/.\n` +
       `Links are:\nhttps://www.ndis.gov.au/news/latest?page=0\nhttps://www.ndis.gov.au/news/latest?page=1 and so on.\n\n` +
-      `# OUTPUT FORMAT\n` +
-      `The format must be a valid json and remove conversational filler, pre-prompt statement, or introductory remark.\n\n` +
-      `Required JSON Format Sample:\n` +
-      `{\n  "blog_titles": [\n    "Understanding Your NDIS Plan Management: A Complete Guide for Australian Participants",\n` +
-      `    "NDIS Plan Management vs Self-Management: Which Option is Right for You?",\n` +
-      `    "Maximising Your NDIS Budget: How Plan Management Can Help You Get More Support"\n  ]\n}`;
+      `# OUTPUT FORMAT\nThe format must be a valid json and remove conversational filler, pre-prompt statement, or introductory remark.\n\n` +
+      `Required JSON Format Sample:\n${jsonSample}`;
   } else {
     chatInput =
-      `Generate ${numberOfTitles} blog post title for Australian-owned NDIS provider around this topic:\n${topic}.` +
+      `Generate ${numberOfTitles} blog post titles for Australian-owned NDIS provider around this topic:\n${topic}.` +
       (source ? `\n\nGet more details on this topic in this url: ${source}` : "") +
-      `\n\n# OUTPUT FORMAT\n` +
-      `The format must be a valid json and remove conversational filler, pre-prompt statement, or introductory remark.\n\n` +
-      `Required JSON Format Sample:\n` +
-      `{\n  "blog_titles": [\n    "Understanding Your NDIS Plan Management: A Complete Guide for Australian Participants",\n` +
-      `    "NDIS Plan Management vs Self-Management: Which Option is Right for You?",\n` +
-      `    "Maximising Your NDIS Budget: How Plan Management Can Help You Get More Support"\n  ]\n}`;
+      `\n\n# OUTPUT FORMAT\nThe format must be a valid json and remove conversational filler, pre-prompt statement, or introductory remark.\n\n` +
+      `Required JSON Format Sample:\n${jsonSample}`;
   }
 
-  // Stage 4: Generate titles via AI
+  // Stage 5: Generate titles via AI
   let parsedOutput;
   try {
-    parsedOutput = await generateBlogTitles(chatInput, brand);
+    parsedOutput = await generateBlogTitles(chatInput, brand, motionTask);
     console.log(`[generate-title] AI generated ${parsedOutput.blog_titles?.length ?? 0} titles for item ${pulseId}`);
   } catch (err) {
     console.error("[generate-title] AI generation failed:", err.message);
@@ -129,28 +134,29 @@ async function runTitlePipeline(event, brand) {
     return;
   }
 
-  // Stage 5: Create one Monday item per generated title in the target board
+  // Stage 6: Create one Monday item per generated title in the target board
   const blogTitles = parsedOutput.blog_titles || [];
-  const targetColumnValues = {
-    ...(source && { [cols.targetSource]: source }),
-    ...(keywords && { [cols.targetKeywords]: keywords }),
-  };
 
   let createErrors = 0;
-  for (const title of blogTitles) {
+  for (const titleItem of blogTitles) {
+    const titleText = titleItem.title ?? titleItem; // handle both object and legacy string shape
+    const itemSource = titleItem.source || source || null;
+    const titleColumnValues = {
+      ...(itemSource && { [cols.targetSource]: itemSource }),
+      ...(keywords && { [cols.targetKeywords]: keywords }),
+    };
     try {
       await createBoardItem(
         cfg.targetBoardId,
         cfg.targetGroupId,
-        title,
-        targetColumnValues,
+        titleText,
+        titleColumnValues,
         brand.monday.apiKey
       );
-      console.log(`[generate-title] Created title item: "${title}"`);
+      console.log(`[generate-title] Created title item: "${titleText}" (source_type: ${titleItem.source_type ?? "unknown"})`);
     } catch (err) {
       createErrors++;
-      console.error(`[generate-title] Failed to create item for title "${title}":`, err.message);
-      // Continue — create as many as possible even if some fail
+      console.error(`[generate-title] Failed to create item for title "${titleText}":`, err.message);
     }
   }
 
@@ -158,7 +164,7 @@ async function runTitlePipeline(event, brand) {
     console.warn(`[generate-title] ${createErrors}/${blogTitles.length} title items failed to create`);
   }
 
-  // Stage 6: Update original topic item status to "Done"
+  // Stage 7: Update original topic item status to "Done"
   try {
     await updateItemColumns(
       cfg.sourceBoardId,

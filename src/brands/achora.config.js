@@ -551,6 +551,11 @@ Your goal is to create newsletters that make participants feel informed, support
     },
   },
 
+  motion: {
+    apiKey: process.env.MOTION_API_KEY_ACHORA,
+    workspaceId: process.env.MOTION_WORKSPACE_ID_ACHORA,
+  },
+
   titleGeneration: {
     sourceBoardId: "5025222939",  // topics board — where trigger fires & status is updated
     targetBoardId: "5025223094",  // blog titles board — where generated title items are created
@@ -594,6 +599,15 @@ Before generating any titles, you MUST:
 4. **Draw inspiration**: Use existing high-performing title structures as templates, but create unique variations
 
 **Important**: You do NOT need to query the website_chunks table. Only the website_metadata table is relevant for title generation, as it contains all existing blog titles without unnecessary content overhead.
+
+## Motion News Source
+When a [MOTION NEWS SOURCE] block is present in the user message, it contains a curated NDIS news item with a heading, summary/description, insight, published date, and source URL. Use this as inspiration for some of the titles — extract the key angle, topic, and the source URL from it.
+
+Rotational distribution: When generating multiple titles, randomly split them between:
+- Motion-sourced titles: Based on the Motion news item's angle. Include the extracted source URL in the output.
+- RAG-sourced titles: Based on standard SEO strategy and content gaps. No source URL (use null).
+
+For a requested count of N titles, aim for roughly 40-60% from each source type (randomise each run). Always ensure at least one of each type when N >= 2.
 
 ## Duplication Prevention Rules
 A title is considered a duplicate if it:
@@ -674,12 +688,29 @@ Always ensure titles:
 # OUTPUT FORMAT
 Return ONLY a valid JSON object with no additional text, explanations, or commentary.
 
+Each item in blog_titles must be an object with:
+- "title": the SEO-optimised blog title string
+- "source": the source URL string if Motion-sourced, or null if RAG-sourced
+- "source_type": either "motion" or "rag"
+
 Required JSON Format:
 {
   "blog_titles": [
-    "First SEO-Optimized Title with Primary Keyword",
-    "Second Title Using Different Format and Keyword Variation",
-    "Third Title Targeting Alternative Search Intent"
+    {
+      "title": "First SEO-Optimized Title with Primary Keyword",
+      "source": "https://www.abc.net.au/example-article",
+      "source_type": "motion"
+    },
+    {
+      "title": "Second Title Using Different Format and Keyword Variation",
+      "source": null,
+      "source_type": "rag"
+    },
+    {
+      "title": "Third Title Targeting Alternative Search Intent",
+      "source": null,
+      "source_type": "rag"
+    }
   ],
   "metadata_check": {
     "existing_similar_titles": [
