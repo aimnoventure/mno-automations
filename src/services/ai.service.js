@@ -160,6 +160,30 @@ async function callClaude(systemPrompt, userPrompt, ragContext, docMetadata) {
   return response.content[0].text;
 }
 
+// ── JSON fence stripping ───────────────────────────────────────────────────────
+
+/**
+ * Removes markdown code fences from an AI response string and extracts the
+ * outermost JSON object. Safe to call on already-clean strings.
+ *
+ * Steps:
+ *   1. Trim whitespace
+ *   2. Strip leading ```json or ``` fence
+ *   3. Strip trailing ``` fence
+ *   4. Slice from first { to last } to discard any remaining preamble/postamble
+ *
+ * @param {string} str - Raw AI output, possibly wrapped in markdown fences
+ * @returns {string} Cleaned string that starts with { and ends with }
+ */
+function stripMarkdownFences(str) {
+  let s = str.trim();
+  s = s.replace(/^```(?:json)?\s*/i, "");
+  s = s.replace(/\s*```\s*$/, "");
+  const start = s.indexOf("{");
+  const end = s.lastIndexOf("}");
+  return start !== -1 && end !== -1 ? s.slice(start, end + 1) : s.trim();
+}
+
 // ── JSON cleaning & parsing ────────────────────────────────────────────────────
 
 /**
@@ -426,13 +450,16 @@ export async function generateBlogContent(chatInput, model, brand) {
 
   if (normalizedModel.includes("gemini")) {
     rawOutput = await callGemini(systemPrompt, chatInput, ragContext, docMetadata);
+    rawOutput = stripMarkdownFences(rawOutput);
     rawOutput = await cleanJsonWithGpt(rawOutput);
   } else if (normalizedModel.includes("claude")) {
     rawOutput = await callClaude(systemPrompt, chatInput, ragContext, docMetadata);
-    // Claude returns clean JSON directly — no cleaning step needed
+    rawOutput = stripMarkdownFences(rawOutput);
+    rawOutput = await cleanJsonWithGpt(rawOutput);
   } else {
     // Default: OpenAI (also handles unrecognised values)
     rawOutput = await callOpenAI(systemPrompt, chatInput, ragContext, docMetadata);
+    rawOutput = stripMarkdownFences(rawOutput);
     rawOutput = await cleanJsonWithGpt(rawOutput);
   }
 
