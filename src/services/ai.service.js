@@ -455,7 +455,8 @@ export async function generateBlogContent(chatInput, model, brand) {
   } else if (normalizedModel.includes("claude")) {
     rawOutput = await callClaude(systemPrompt, chatInput, ragContext, docMetadata);
     rawOutput = stripMarkdownFences(rawOutput);
-    rawOutput = await cleanJsonWithGpt(rawOutput);
+    // cleanJsonWithGpt is intentionally skipped for Claude — blog content JSON is too large
+    // for the 4096-token limit and would be truncated, corrupting the content field.
   } else {
     // Default: OpenAI (also handles unrecognised values)
     rawOutput = await callOpenAI(systemPrompt, chatInput, ragContext, docMetadata);
